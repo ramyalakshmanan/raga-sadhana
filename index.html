@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Raga Sadhana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rozha+One&family=Hind:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <h1>Raga Sadhana</h1>
+    <p>Melakartas, janya ragas, ear training and voice practice</p>
+  </div>
+  <div class="shruti-bar">
+    <label for="shruti">Shruti</label>
+    <select id="shruti"></select>
+    <button id="droneBtn" class="btn toggle" type="button" aria-pressed="false">Tambura</button>
+    <label for="vol" class="sr-only">Volume</label>
+    <input id="vol" type="range" min="0" max="1" step="0.01" value="0.7">
+  </div>
+</header>
+<div class="zari" aria-hidden="true"></div>
+
+<nav class="tabs" role="tablist" aria-label="Sections">
+  <button role="tab" type="button" data-tab="learn">Learn</button>
+  <button role="tab" type="button" data-tab="ear">Ear training</button>
+  <button role="tab" type="button" data-tab="janya">Janya map</button>
+  <button role="tab" type="button" data-tab="voice">Voice practice</button>
+</nav>
+
+<main>
+
+<!-- LEARN -->
+<section id="tab-learn" class="panel" hidden>
+  <div class="block">
+    <div class="block-head">
+      <h2>The twelve swarasthanas</h2>
+      <p>An octave holds twelve positions. The seven swaras S R G M P D N occupy them in different combinations, and four positions carry two names: R₂ is the same pitch as G₁, R₃ as G₂, D₂ as N₁, D₃ as N₂. Tap a position to hear it.</p>
+    </div>
+    <div id="strip" class="strip"></div>
+    <div class="row"><button id="playAll12" class="btn" type="button">Play all twelve</button></div>
+  </div>
+
+  <div class="block">
+    <div class="block-head">
+      <h2>Decode any melakarta</h2>
+      <p>The 72 melakartas are built by rule. Numbers 1–36 use M₁ and 37–72 use M₂. Each half has six chakras of six ragas. The chakra fixes R and G, and the position inside the chakra fixes D and N. Chakra names count things (Indu, the moon, is 1; Netra, the eyes, is 2; Agni, the three fires, is 3) and the syllables pa, sri, go, bhu, ma, sha stand for positions 1 to 6.</p>
+    </div>
+    <div class="dec-controls">
+      <button id="melaPrev" class="btn icon" type="button" aria-label="Previous melakarta">‹</button>
+      <label for="melaNum" class="sr-only">Melakarta number</label>
+      <input id="melaNum" type="number" min="1" max="72" value="15">
+      <button id="melaNext" class="btn icon" type="button" aria-label="Next melakarta">›</button>
+      <label for="melaSlider" class="sr-only">Melakarta slider</label>
+      <input id="melaSlider" type="range" min="1" max="72" value="15">
+    </div>
+    <div id="melaCard" class="mela-card"></div>
+  </div>
+
+  <div class="block">
+    <div class="block-head">
+      <h2>The 72-mela chart</h2>
+      <p>Twelve chakras of six. Pick any raga to open it in the decoder above.</p>
+    </div>
+    <div id="melaChart"></div>
+  </div>
+
+  <div class="block two-col">
+    <div>
+      <h2>Katapayadi: the number is in the name</h2>
+      <p>Take the first two syllables of a melakarta's name, turn each consonant into its katapayadi digit, and read the digits backwards.</p>
+      <div class="table-wrap">
+        <table class="kata">
+          <thead><tr><th>Digit</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>0</th></tr></thead>
+          <tbody>
+            <tr><th>ka group</th><td>ka</td><td>kha</td><td>ga</td><td>gha</td><td>ṅa</td><td>ca</td><td>cha</td><td>ja</td><td>jha</td><td>ña</td></tr>
+            <tr><th>ṭa group</th><td>ṭa</td><td>ṭha</td><td>ḍa</td><td>ḍha</td><td>ṇa</td><td>ta</td><td>tha</td><td>da</td><td>dha</td><td>na</td></tr>
+            <tr><th>pa group</th><td>pa</td><td>pha</td><td>ba</td><td>bha</td><td>ma</td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><th>ya group</th><td>ya</td><td>ra</td><td>la</td><td>va</td><td>śa</td><td>ṣa</td><td>sa</td><td>ha</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="kata-ex">
+        <li><b>Ka</b>-<b>na</b>kangi: 1, 0 → 01 → <b>1</b></li>
+        <li><b>Ha</b>-<b>nu</b>matodi: 8, 0 → 08 → <b>8</b></li>
+        <li><b>Ma</b>-<b>ya</b>malavagowla: 5, 1 → 15 → <b>15</b></li>
+        <li><b>Ha</b>-<b>ri</b>kambhoji: 8, 2 → 28 → <b>28</b></li>
+        <li><b>Dhee</b>-<b>ra</b>sankarabharanam: 9, 2 → 29 → <b>29</b></li>
+        <li><b>Me</b>-<b>cha</b>kalyani: 5, 6 → 65 → <b>65</b></li>
+        <li><b>Ra</b>-<b>si</b>kapriya: 2, 7 → 72 → <b>72</b></li>
+      </ul>
+    </div>
+    <div>
+      <h2>Janya vocabulary</h2>
+      <dl class="vocab">
+        <dt>Janya</dt><dd>A raga derived from a melakarta. It may skip swaras or move through them in a zigzag.</dd>
+        <dt>Varjya</dt><dd>Omitted swaras. Mohanam omits Ma and Ni.</dd>
+        <dt>Audava · Shadava · Sampurna</dt><dd>Five, six or seven swaras in one direction. Mohanam is audava–audava; Bilahari is audava–sampurna.</dd>
+        <dt>Vakra</dt><dd>A zigzag order, like Kedaram's S M G M P N Ṡ.</dd>
+        <dt>Upanga · Bhashanga</dt><dd>An upanga raga stays within its parent's swaras. A bhashanga raga borrows an outside swara (anya swara), as Bhairavi and Kambhoji do. This app's library lists upanga forms.</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- EAR TRAINING -->
+<section id="tab-ear" class="panel" hidden>
+  <div class="block">
+    <div class="toolbar">
+      <div class="seg" id="earMode" role="group" aria-label="Quiz type">
+        <button type="button" data-v="raga" aria-pressed="true">Name the raga</button>
+        <button type="button" data-v="swara" aria-pressed="false">Name the swara</button>
+      </div>
+      <label for="earLevel" class="sr-only">Level</label>
+      <select id="earLevel"></select>
+      <label for="earSpeed" class="sr-only">Speed</label>
+      <select id="earSpeed">
+        <option value="0.7">Slow</option>
+        <option value="0.5" selected>Medium</option>
+        <option value="0.34">Fast</option>
+      </select>
+      <span id="earScore" class="score"></span>
+    </div>
+
+    <div class="quiz">
+      <div id="earPrompt" class="quiz-prompt"></div>
+      <div class="row" id="earPlayRow">
+        <button id="earPlay" class="btn primary" type="button">Play</button>
+        <button id="earAro" class="btn" type="button">Arohanam only</button>
+        <button id="earAva" class="btn" type="button">Avarohanam only</button>
+      </div>
+      <div id="earOptions" class="options"></div>
+      <div id="earFeedback" class="feedback" hidden></div>
+      <div class="row"><button id="earNext" class="btn primary" type="button" hidden>Next question</button></div>
+    </div>
+  </div>
+  <div class="block">
+    <h3>Needs work</h3>
+    <div id="earWeak" class="muted">Ragas you miss will show up here.</div>
+    <div class="row"><button id="earReset" class="btn subtle" type="button">Reset my scores</button></div>
+  </div>
+</section>
+
+<!-- JANYA MAP -->
+<section id="tab-janya" class="panel" hidden>
+  <div class="block janya-layout">
+    <aside class="janya-list">
+      <label for="janyaFilter" class="sr-only">Filter ragas</label>
+      <input id="janyaFilter" type="search" placeholder="Filter by raga, parent or mela number">
+      <div id="janyaGroups" class="jgroups"></div>
+    </aside>
+    <article id="janyaDetail" class="janya-detail"></article>
+  </div>
+
+  <div class="block">
+    <div class="toolbar">
+      <h2 class="toolbar-title">Mapping quiz</h2>
+      <div class="seg" id="jqType" role="group" aria-label="Quiz type">
+        <button type="button" data-v="parent" aria-pressed="true">Janya → parent mela</button>
+        <button type="button" data-v="swaras" aria-pressed="false">Swaras → mela number</button>
+      </div>
+      <span id="jqScore" class="score"></span>
+    </div>
+    <div class="quiz">
+      <div id="jqPrompt" class="quiz-prompt"></div>
+      <div id="jqOptions" class="options"></div>
+      <div id="jqFeedback" class="feedback" hidden></div>
+      <div class="row"><button id="jqNext" class="btn primary" type="button">Next question</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- VOICE -->
+<section id="tab-voice" class="panel" hidden>
+  <div class="block">
+    <div class="toolbar">
+      <button id="micBtn" class="btn primary" type="button">Start microphone</button>
+      <label for="vRaga">Raga</label>
+      <select id="vRaga"></select>
+      <label for="vStrict">Strictness</label>
+      <select id="vStrict">
+        <option value="relaxed">Relaxed ±40¢</option>
+        <option value="standard" selected>Standard ±25¢</option>
+        <option value="strict">Strict ±15¢</option>
+      </select>
+      <label class="check"><input id="vGuide" type="checkbox" checked> Play each target first</label>
+    </div>
+    <p id="micStatus" class="muted small">Use headphones if you can, so the microphone hears only your voice and not the tambura.</p>
+
+    <div class="meter">
+      <div class="meter-note">
+        <span id="mNote" class="big-swara">–</span>
+        <span id="mOct" class="muted small"></span>
+      </div>
+      <div class="meter-cents">
+        <div class="cents-scale"><span class="cents-zone" id="mZone"></span><span class="cents-mid"></span><span id="mNeedle" class="needle" hidden></span></div>
+        <div class="cents-labels"><span>−50¢ flat</span><span>in tune</span><span>sharp +50¢</span></div>
+        <div id="mText" class="mono small muted">Microphone is off</div>
+      </div>
+      <div id="mRaga" class="meter-raga"></div>
+    </div>
+    <div class="trace-wrap"><canvas id="trace" aria-label="Pitch trace against the raga's swaras"></canvas></div>
+  </div>
+
+  <div class="block">
+    <div class="seg ex-tabs" id="exTabs" role="group" aria-label="Exercise">
+      <button type="button" data-v="range" aria-pressed="false">Find my range</button>
+      <button type="button" data-v="hold" aria-pressed="true">Hold the shruti</button>
+      <button type="button" data-v="ladder" aria-pressed="false">Swara ladder</button>
+      <button type="button" data-v="jumps" aria-pressed="false">Octave jumps</button>
+      <button type="button" data-v="free" aria-pressed="false">Free singing</button>
+    </div>
+
+    <div class="ex" data-ex="range" hidden>
+      <p>Turn the tambura off for this one. Sing your lowest comfortable note, with no strain or growl, and hold it while the app listens for five seconds. Then do the same for your highest comfortable note. Carnatic singing usually spans about two octaves, from mandra Pa (P̣) to tara Pa (Ṗ).</p>
+      <div class="row">
+        <button id="rangeLow" class="btn" type="button">Record lowest note</button>
+        <button id="rangeHigh" class="btn" type="button">Record highest note</button>
+        <button id="rangeClear" class="btn subtle" type="button">Clear</button>
+      </div>
+      <p id="rangeStatus" class="status"></p>
+      <div id="rangeResult"></div>
+    </div>
+
+    <div class="ex" data-ex="hold">
+      <p>Sustain one swara against the shruti and see how steady you are. Start the tambura for a reference. Singing Sa and Pa in tune is the foundation of every other exercise.</p>
+      <div class="row">
+        <div class="seg small" id="holdTarget" role="group" aria-label="Swara to hold">
+          <button type="button" data-v="S" aria-pressed="true">Sa</button>
+          <button type="button" data-v="P" aria-pressed="false">Pa</button>
+          <button type="button" data-v="S'" aria-pressed="false">Tara Sa</button>
+          <button type="button" data-v="P." aria-pressed="false">Mandra Pa</button>
+        </div>
+        <label for="holdDur" class="sr-only">Duration</label>
+        <select id="holdDur"><option value="5">5 seconds</option><option value="8" selected>8 seconds</option><option value="12">12 seconds</option></select>
+        <button id="holdStart" class="btn primary" type="button">Start</button>
+      </div>
+      <div class="progress"><span id="holdBar"></span></div>
+      <p id="holdStatus" class="status"></p>
+      <div id="holdResult"></div>
+    </div>
+
+    <div class="ex" data-ex="ladder" hidden>
+      <p>Climb the raga one swara at a time. Hold each target until it turns green; the app moves on by itself. It measures how long you take to find each swara and whether you sit sharp or flat on it.</p>
+      <div class="row">
+        <label for="ladderPattern" class="sr-only">Pattern</label>
+        <select id="ladderPattern">
+          <option value="aa">Arohanam and avarohanam</option>
+          <option value="groups">Groups of three</option>
+          <option value="range">Across my range</option>
+        </select>
+        <button id="ladderListen" class="btn" type="button">Listen</button>
+        <button id="ladderStart" class="btn primary" type="button">Start</button>
+        <button id="ladderSkip" class="btn subtle" type="button">Skip swara</button>
+      </div>
+      <div id="ladderTrack" class="track"></div>
+      <p id="ladderStatus" class="status"></p>
+      <div id="ladderResult"></div>
+    </div>
+
+    <div class="ex" data-ex="jumps" hidden>
+      <p>Leap between octaves and land in tune: Sa to tara Sa, mandra Pa to Pa, and each raga swara to its octave. The app times how fast you settle on the new note. Jumps stay inside your recorded range, or mandra Pa to tara Pa if you have not recorded one.</p>
+      <div class="row">
+        <label for="jumpSet" class="sr-only">Jump set</label>
+        <select id="jumpSet">
+          <option value="anchors">Sa and Pa anchors</option>
+          <option value="all">Every raga swara</option>
+        </select>
+        <button id="jumpsListen" class="btn" type="button">Listen</button>
+        <button id="jumpsStart" class="btn primary" type="button">Start</button>
+        <button id="jumpsSkip" class="btn subtle" type="button">Skip</button>
+      </div>
+      <div id="jumpsTrack" class="track"></div>
+      <p id="jumpsStatus" class="status"></p>
+      <div id="jumpsResult"></div>
+    </div>
+
+    <div class="ex" data-ex="free" hidden>
+      <p>Sing freely in the chosen raga: an alapana, a varnam line, a kriti. The app counts how much of your voiced time sits on the raga's swaras and which outside swaras you slip into. Gamakas pass through other pitches on purpose, so treat this as a guide, not a grade.</p>
+      <div class="stats">
+        <div class="stat"><span class="stat-label">On raga swaras</span><span id="freeOn" class="stat-val">–</span></div>
+        <div class="stat"><span class="stat-label">On outside swaras</span><span id="freeOff" class="stat-val">–</span></div>
+        <div class="stat"><span class="stat-label">Voiced time</span><span id="freeTime" class="stat-val">–</span></div>
+      </div>
+      <p id="freeOut" class="status"></p>
+      <div class="row"><button id="freeReset" class="btn subtle" type="button">Reset counts</button></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot muted small">
+  Tones use just-intonation ratios over the chosen shruti. The synthesised voice plays plain swaras without gamakas, so use it to learn the scale and pair it with recordings of real performances.
+</footer>
+
+<script src="js/util.js"></script>
+<script src="js/theory.js"></script>
+<script src="js/sound.js"></script>
+<script src="js/pitch.js"></script>
+<script src="js/learn.js"></script>
+<script src="js/ear.js"></script>
+<script src="js/janya.js"></script>
+<script src="js/voice.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
