@@ -136,5 +136,5 @@ const Learn = (() => {
     window.addEventListener('beforeunload', () => store.set('mela', current));
   }
 
-  return { init, showMela: renderMela, playRaga };
+  return { init, showMela: renderMela, playRaga, current: () => current };
 })();

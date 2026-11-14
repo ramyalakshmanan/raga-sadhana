@@ -1,9 +1,11 @@
 // App shell: tabs, shruti, tambura, volume, and cross-tab navigation.
 const App = (() => {
   const TABS = ['learn', 'ear', 'janya', 'voice'];
+  let currentTab = 'learn';
 
   function go(tab) {
     if (!TABS.includes(tab)) tab = 'learn';
+    currentTab = tab;
     TABS.forEach((t) => { $('#tab-' + t).hidden = t !== tab; });
     $$('.tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
     if (location.hash !== '#' + tab) history.replaceState(null, '', '#' + tab);
@@ -39,12 +41,14 @@ const App = (() => {
     Ear.init();
     Janya.init();
     Voice.init();
+    Chat.init();
     setShruti(store.get('shruti', 7));
     go(location.hash.slice(1) || store.get('tab', 'learn'));
   }
 
   return {
     init, go, setShruti,
+    currentTab: () => currentTab,
     showRaga(id) { Janya.show(id); go('janya'); window.scrollTo({ top: 0, behavior: 'smooth' }); },
     showMela(n) { Learn.showMela(n); go('learn'); $('#melaNum').scrollIntoView({ behavior: 'smooth', block: 'center' }); },
     practise(id) { Voice.setRaga(id); go('voice'); window.scrollTo({ top: 0, behavior: 'smooth' }); },

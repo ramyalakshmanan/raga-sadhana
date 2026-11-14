@@ -165,5 +165,5 @@ const Janya = (() => {
     newQ();
   }
 
-  return { init, show };
+  return { init, show, current: () => sel };
 })();

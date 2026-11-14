@@ -29,12 +29,14 @@ const Sound = (() => {
 
   // ---- tanpura ----
   // Each string is pre-rendered once per shruti with additive synthesis in an
-  // OfflineAudioContext, modelling what gives an acoustic tanpura its sound:
-  //  - jawari: the curved bridge makes overtones bloom after the pluck, and a
-  //    band of strong overtones sweeps slowly down the spectrum as the note rings
-  //  - two slightly detuned vibration planes per string, which beat and shimmer
-  //  - a small pitch drop just after the pluck, slow decay, a soft pluck transient
-  //  - gourd body resonance, plus a short room reverb added live
+  // OfflineAudioContext. What separates a tanpura from a harpsichord-like pluck:
+  //  - a soft start: the high overtones are not there at the pluck, they swell
+  //    in over the first second (the jawari bloom), so there is no bright click
+  //  - jawari buzz: a broad band of strong overtones that stays present for the
+  //    whole note and drifts slowly down the spectrum
+  //  - a very long ring (~10 s), so successive plucks overlap into one continuous drone
+  //  - two detuned vibration planes per string that beat and shimmer
+  //  - gourd body resonance, plus room reverb added live
   // Strings: Pa (mandra), Sa, Sa (madhya, the jodi pair), Sa (kharaj, an octave down).
   const STRINGS = [
     { cents: -498.04, pan: -0.25, level: 0.9, seed: 1 },
@@ -42,7 +44,7 @@ const Sound = (() => {
     { cents: 1.2, pan: 0.3, level: 0.8, seed: 3 },
     { cents: -1200, pan: -0.1, level: 1.0, seed: 4 },
   ];
-  const STEP = 0.78, CYCLE = 3.6, RING = 7;
+  const STEP = 0.9, CYCLE = 4.0, RING = 10;
   let tanBufs = null, tanSa = 0, tanJob = null, reverb = null;
 
   function rng(seed) { // small deterministic PRNG so each string keeps its character
@@ -59,56 +61,60 @@ const Sound = (() => {
     // Body: gourd resonance and a gentle top-end roll-off.
     const body = oc.createBiquadFilter(); body.type = 'peaking'; body.frequency.value = 190; body.Q.value = 1.1; body.gain.value = 4;
     const body2 = oc.createBiquadFilter(); body2.type = 'peaking'; body2.frequency.value = 520; body2.Q.value = 1.4; body2.gain.value = 2;
-    const shelf = oc.createBiquadFilter(); shelf.type = 'highshelf'; shelf.frequency.value = 4500; shelf.gain.value = -6;
+    const shelf = oc.createBiquadFilter(); shelf.type = 'highshelf'; shelf.frequency.value = 5000; shelf.gain.value = -4;
     body.connect(body2).connect(shelf).connect(oc.destination);
     const panL = oc.createStereoPanner(), panR = oc.createStereoPanner();
     panL.pan.value = Math.max(-1, s.pan - 0.35); panR.pan.value = Math.min(1, s.pan + 0.35);
     panL.connect(body); panR.connect(body);
 
     const maxK = Math.min(64, Math.floor(8500 / f0));
-    const PTS = 700, dt = RING / (PTS - 1);
-    const tauBase = low ? 3.6 : 2.8;
-    const K0 = Math.min(maxK * 0.8, low ? 30 : 22);
+    const PTS = 1000, dt = RING / (PTS - 1);
+    const tauBase = low ? 9 : 7;
+    const K0 = Math.min(maxK * 0.85, low ? 34 : 26);
     let norm = 0;
-    for (let k = 1; k <= maxK; k++) norm += 1 / Math.pow(k, 0.85);
+    for (let k = 1; k <= maxK; k++) norm += 1 / Math.pow(k, 0.7);
 
     for (let k = 1; k <= maxK; k++) {
-      const base = (1 / Math.pow(k, 0.85)) / norm * 1.6;
-      const tau = tauBase / (1 + 0.035 * k);
-      const shimRate = 0.25 + rnd() * 0.6, shimPh = rnd() * 6.28;
+      const base = (1 / Math.pow(k, 0.7)) / norm * 1.6;
+      const tau = tauBase / (1 + 0.012 * k);     // highs fade only slightly faster: the buzz persists
+      const rise = 0.004 + 0.006 * k;            // higher overtones swell in later (soft, blooming start)
+      const shimRate = 0.2 + rnd() * 0.5, shimPh = rnd() * 6.28;
       const curve = new Float32Array(PTS);
       for (let i = 0; i < PTS; i++) {
         const t = i * dt;
-        // Jawari formant: rises within ~0.15 s, then drifts down through the overtones.
-        const c = (3 + (K0 - 3) * Math.exp(-t / 2.6)) * (1 - Math.exp(-t / 0.15));
-        const w = 2.5 + 0.22 * c;
-        const boost = 1 + 3.2 * Math.exp(-t / 3.5) * Math.exp(-((k - c) ** 2) / (2 * w * w));
-        const shimmer = 1 + 0.12 * Math.sin(2 * Math.PI * shimRate * t + shimPh);
-        const attack = Math.min(1, t / 0.006);
+        // Jawari band: grows over ~0.8 s, then drifts slowly down through the overtones.
+        const c = (4 + (K0 - 4) * Math.exp(-t / 4.5)) * (1 - Math.exp(-t / 0.35));
+        const w = 3 + 0.25 * c;
+        const boost = 1 + 4 * (1 - Math.exp(-t / 0.4)) * Math.exp(-t / 8) * Math.exp(-((k - c) ** 2) / (2 * w * w));
+        const shimmer = 1 + 0.15 * Math.sin(2 * Math.PI * shimRate * t + shimPh);
+        const attack = 1 - Math.exp(-t / rise);
         const tail = i === PTS - 1 ? 0 : 1;
         curve[i] = base * Math.exp(-t / tau) * boost * shimmer * attack * tail;
       }
       for (let pol = 0; pol < 2; pol++) {
-        const fk = k * f0 * (1 + 0.000015 * k * k) + (pol ? 0.18 + rnd() * 0.35 : 0);
+        const fk = k * f0 * (1 + 0.000015 * k * k) + (pol ? 0.3 + rnd() * 0.5 : 0);
         if (fk > sr / 2 - 500) continue;
         const o = oc.createOscillator();
+        // Random starting phase: if every overtone starts in step they sum to a sharp click.
+        const ph = rnd() * 2 * Math.PI;
+        o.setPeriodicWave(oc.createPeriodicWave(new Float32Array([0, Math.sin(ph)]), new Float32Array([0, Math.cos(ph)])));
         o.frequency.setValueAtTime(fk * Math.pow(2, 9 / 1200), 0);   // pluck tension, settles in ~0.3 s
         o.frequency.exponentialRampToValueAtTime(fk, 0.3);
         const g = oc.createGain();
         g.gain.setValueCurveAtTime(pol ? curve.map((v) => v * 0.8) : curve, 0, RING - 0.01);
         o.connect(g).connect(pol ? panR : panL);
-        o.start(0, rnd() * 0.0001);
+        o.start(0);
         o.stop(RING);
       }
     }
 
-    // Finger pluck: a very short band-passed noise burst.
-    const nb = oc.createBuffer(1, Math.floor(sr * 0.04), sr);
+    // Finger pluck: a soft, low thud (the flesh of the finger, not a plectrum click).
+    const nb = oc.createBuffer(1, Math.floor(sr * 0.06), sr);
     const nd = nb.getChannelData(0);
-    for (let i = 0; i < nd.length; i++) nd[i] = (rnd() * 2 - 1) * Math.exp(-i / (sr * 0.008));
+    for (let i = 0; i < nd.length; i++) nd[i] = (rnd() * 2 - 1) * Math.exp(-i / (sr * 0.012));
     const ns = oc.createBufferSource(); ns.buffer = nb;
-    const bp = oc.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = Math.min(3000, f0 * 12); bp.Q.value = 0.9;
-    const ng = oc.createGain(); ng.gain.value = 0.05;
+    const bp = oc.createBiquadFilter(); bp.type = 'lowpass'; bp.frequency.value = 700; bp.Q.value = 0.7;
+    const ng = oc.createGain(); ng.gain.value = 0.02;
     ns.connect(bp).connect(ng).connect(body);
     ns.start(0);
 
@@ -122,7 +128,7 @@ const Sound = (() => {
   }
 
   function makeReverb() {
-    const sr = ctx.sampleRate, len = Math.floor(sr * 2.2);
+    const sr = ctx.sampleRate, len = Math.floor(sr * 2.8);
     const ir = ctx.createBuffer(2, len, sr);
     const r = rng(99);
     for (let ch = 0; ch < 2; ch++) {
@@ -130,7 +136,7 @@ const Sound = (() => {
       for (let i = 0; i < len; i++) d[i] = (r() * 2 - 1) * Math.pow(1 - i / len, 3) * (i < sr * 0.012 ? i / (sr * 0.012) : 1);
     }
     const conv = ctx.createConvolver(); conv.buffer = ir;
-    const wet = ctx.createGain(); wet.gain.value = 0.22;
+    const wet = ctx.createGain(); wet.gain.value = 0.28;
     const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3500;
     conv.connect(lp).connect(wet).connect(master);
     return conv;

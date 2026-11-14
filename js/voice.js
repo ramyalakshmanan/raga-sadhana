@@ -634,6 +634,14 @@ const Voice = (() => {
       const perSwara = [...by.entries()].map(([h, offs]) => ({ h, n: offs.length, m: mean(offs) }))
         .sort((a, b) => Math.abs(b.m) - Math.abs(a.m));
 
+      // Plain-text version of the report, so the chat can explain it.
+      const plain = (html) => (html || '').replace(/<sub>(\d)<\/sub>/g, '$1').replace(/<[^>]+>/g, '');
+      this.summary = [
+        `Raga: ${raga.name}. Mode: ${this.mode() === 'aa' ? 'arohanam and avarohanam' : 'free singing'}. Accuracy score ${overall}%, ${tuned} of ${scored.length} notes within 25 cents, overall tendency ${fmtCents(avgOff)}.`,
+        'Notes (should be / sang / offset / steadiness / verdict): ' + rows.map((r) =>
+          `${plain(r.tHTML) || '-'} / ${plain(r.heard) || 'not heard'} / ${r.off == null ? '-' : fmtCents(r.off)} / ${r.n ? '±' + Math.round(r.n.sd) + '¢' : '-'} / ${VERDICT[r.v][1]}`).join('; '),
+      ].join('\n');
+
       const tips = [];
       for (const s of perSwara.filter((s) => Math.abs(s.m) > 12).slice(0, 3)) {
         tips.push(s.m > 0
@@ -779,6 +787,8 @@ const Voice = (() => {
 
   return {
     init, setRaga,
+    raga: () => raga,
+    lastReport: () => check.summary || "",
     onShow() { requestAnimationFrame(() => draw(performance.now())); },
     onShruti() { renderRange(); ladder.preview(); jumps.preview(); draw(performance.now()); },
   };
