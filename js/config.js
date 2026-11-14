@@ -7,5 +7,7 @@
 //
 // Never put an API key in this file: the site is public.
 window.RAGA_SADHANA_CONFIG = {
+  // Set to true to show the "Ask a doubt" chat button on every page.
+  chatEnabled: false,
   chatProxyUrl: '',
 };

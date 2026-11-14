@@ -41,7 +41,7 @@ const App = (() => {
     Ear.init();
     Janya.init();
     Voice.init();
-    Chat.init();
+    if (window.RAGA_SADHANA_CONFIG?.chatEnabled) Chat.init();
     setShruti(store.get('shruti', 7));
     go(location.hash.slice(1) || store.get('tab', 'learn'));
   }
