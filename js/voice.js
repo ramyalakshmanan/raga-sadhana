@@ -8,7 +8,7 @@ const Voice = (() => {
 
   let raga = null, stSet = new Set();
   let running = false, raf = 0, lastT = 0;
-  let exercise = 'hold';
+  let exercise = 'check';
   const hist = [], trace = [];
   let colors = {}, colorsAt = 0;
   let range = store.get('range', null); // {lowHz, highHz}
@@ -75,6 +75,7 @@ const Voice = (() => {
     trace.push({ t: now, c, s: cl ? cl.state : null });
     while (trace.length && now - trace[0].t > WINDOW) trace.shift();
 
+    check.onFrame(c, now);
     rangeEx.onFrame(c, dt, now);
     hold.onFrame(c, dt, now);
     ladder.onFrame(c, dt, now);
@@ -464,6 +465,229 @@ const Voice = (() => {
   const ladder = SeqRunner('ladder', buildLadder);
   const jumps = SeqRunner('jumps', buildJumps);
 
+  // ---------- check my singing ----------
+  // Records free-flowing singing, splits it into notes, and reports each note's accuracy.
+
+  // Split recorded frames ({t, c}) into sung notes. Short glides between swaras
+  // are dropped; each note's pitch is the median of its steady middle part.
+  function segmentNotes(frames) {
+    const labTarget = (lab) => T.CENTS[((lab % 12) + 12) % 12] + 1200 * Math.floor(lab / 12);
+    const runs = [];
+    let cur = null, lastT = -1e9;
+    for (const f of frames) {
+      if (f.c == null) continue;
+      const n = T.nearest(f.c);
+      const lab = n.st + 12 * n.oct;
+      if (cur && f.t - lastT < 150) {
+        // Stay on the current swara unless the pitch is clearly closer to another one.
+        const keep = lab === cur.lab || Math.abs(f.c - labTarget(cur.lab)) < Math.abs(f.c - n.target) + 15;
+        if (keep) { cur.pts.push(f); lastT = f.t; continue; }
+      }
+      cur = { lab, pts: [f] };
+      runs.push(cur);
+      lastT = f.t;
+    }
+    const span = (pts) => pts[pts.length - 1].t - pts[0].t;
+    const merged = [];
+    for (const r of runs.filter((r) => span(r.pts) >= 90)) {
+      const p = merged[merged.length - 1];
+      if (p && p.lab === r.lab && r.pts[0].t - p.pts[p.pts.length - 1].t < 130) p.pts.push(...r.pts);
+      else merged.push({ lab: r.lab, pts: r.pts.slice() });
+    }
+    return merged.filter((r) => span(r.pts) >= 180).map(({ pts }) => {
+      const t0 = pts[0].t, t1 = pts[pts.length - 1].t, D = t1 - t0;
+      let core = pts.filter((p) => p.t >= t0 + D * 0.15 && p.t <= t1 - D * 0.1);
+      if (core.length < 3) core = pts;
+      const cs = core.map((p) => p.c);
+      return { t0, t1, dur: D, cents: median(cs), sd: stdev(cs) };
+    });
+  }
+
+  // Line up sung notes with the expected sequence (edit-distance alignment).
+  function alignNotes(notes, exp) {
+    const n = notes.length, m = exp.length, GAP = 2;
+    const D = Array.from({ length: n + 1 }, () => new Float64Array(m + 1));
+    const B = Array.from({ length: n + 1 }, () => new Uint8Array(m + 1));
+    for (let i = 1; i <= n; i++) { D[i][0] = i * GAP; B[i][0] = 1; }
+    for (let j = 1; j <= m; j++) { D[0][j] = j * GAP; B[0][j] = 2; }
+    for (let i = 1; i <= n; i++) {
+      for (let j = 1; j <= m; j++) {
+        const c = Math.min(Math.abs(notes[i - 1].cents - exp[j - 1].cents) / 50, 4);
+        const opts = [D[i - 1][j - 1] + c, D[i - 1][j] + GAP, D[i][j - 1] + GAP];
+        const k = opts.indexOf(Math.min(...opts));
+        D[i][j] = opts[k]; B[i][j] = k;
+      }
+    }
+    const out = [];
+    for (let i = n, j = m; i > 0 || j > 0;) {
+      const k = B[i][j];
+      if (i > 0 && j > 0 && k === 0) { out.push({ note: notes[i - 1], exp: exp[j - 1] }); i--; j--; }
+      else if (i > 0 && (j === 0 || k === 1)) { out.push({ note: notes[i - 1] }); i--; }
+      else { out.push({ exp: exp[j - 1] }); j--; }
+    }
+    return out.reverse();
+  }
+
+  const VERDICT = {
+    acc: ['good', 'Accurate'], close: ['close', 'Close'], off: ['warn', 'Off'],
+    wrong: ['bad', 'Wrong swara'], outside: ['bad', 'Not in raga'], missed: ['bad', 'Missed'], extra: ['', 'Extra note'],
+  };
+  function heardHTML(c) {
+    const n = T.nearest(c);
+    const names = stSet.has(n.st) ? [T.nameFor(raga, n.st)] : T.POSITIONS[n.st].names;
+    return names.map((x) => T.swaraHTML(T.tokObj(x, n.oct))).join('/');
+  }
+  // Judge one sung pitch against the swara it should have been.
+  function judge(cents, target) {
+    const off = cents - target, a = Math.abs(off);
+    const v = a <= 10 ? 'acc' : a <= 25 ? 'close' : a <= 50 ? 'off' : 'wrong';
+    return { off, v, score: a > 50 ? 0 : Math.max(0, Math.round(100 - a * 2)) };
+  }
+  function judgeFree(cents) {
+    const inR = T.nearest(cents, stSet), any = T.nearest(cents);
+    const target = inR.target;
+    const tHTML = T.swaraHTML(T.tokObj(T.nameFor(raga, inR.st), inR.oct));
+    if (!stSet.has(any.st) && Math.abs(any.dev) <= 30) return { off: cents - target, v: 'outside', score: 0, target, tHTML };
+    return { ...judge(cents, target), target, tHTML };
+  }
+
+  const check = {
+    rec: false, frames: [], t0: 0, lastVoiced: 0, liveAt: 0,
+    mode: () => $('#checkMode').value,
+    expected() {
+      return [...raga.aro, ...raga.ava.slice(1)].map((s) => {
+        const t = T.parseToken(s);
+        return { cents: t.cents, html: T.swaraHTML(t) };
+      });
+    },
+    renderExpected() {
+      const el = $('#checkExpected');
+      el.hidden = this.mode() !== 'aa';
+      el.innerHTML = `<span class="chip label">Sing</span>` + this.expected().map((e) => `<span class="chip">${e.html}</span>`).join('');
+    },
+    async toggle() {
+      if (this.rec) return this.stop();
+      if (!(await ensureMic())) return;
+      Sound.stopVoice();
+      this.frames = []; this.rec = true; this.t0 = performance.now(); this.lastVoiced = 0;
+      $('#checkStart').textContent = 'Stop and see my report';
+      $('#checkListen').disabled = true;
+      $('#checkResult').innerHTML = ''; $('#checkLive').innerHTML = '';
+      $('#checkStatus').textContent = this.mode() === 'aa'
+        ? `Listening. Sing the arohanam and avarohanam of ${raga.name} at your own pace.`
+        : `Listening. Sing any swaras of ${raga.name}, holding each one for a moment.`;
+    },
+    onFrame(c, now) {
+      if (!this.rec) return;
+      this.frames.push({ t: now, c });
+      if (c != null) this.lastVoiced = now;
+      if (now - this.liveAt > 300) { this.liveAt = now; this.renderLive(); }
+      if ((this.lastVoiced && now - this.lastVoiced > 4000) || now - this.t0 > 180000) this.stop();
+    },
+    renderLive() {
+      const notes = segmentNotes(this.frames);
+      $('#checkLive').innerHTML = notes.length
+        ? `<span class="chip label">Heard</span>` + notes.map((n) => {
+          const j = judgeFree(n.cents);
+          const cls = j.v === 'acc' || j.v === 'close' ? 'ok' : j.v === 'off' ? 'meh' : 'miss';
+          return `<span class="chip ${cls}">${heardHTML(n.cents)}</span>`;
+        }).join('')
+        : '';
+    },
+    stop() {
+      this.rec = false;
+      $('#checkStart').textContent = 'Start singing';
+      $('#checkListen').disabled = false;
+      this.renderLive();
+      const notes = segmentNotes(this.frames);
+      if (!notes.length) {
+        $('#checkStatus').textContent = 'I could not pick out any notes. Sing a little louder or closer to the microphone, and hold each swara for at least a quarter of a second.';
+        return;
+      }
+      $('#checkStatus').textContent = '';
+      $('#checkResult').innerHTML = this.report(notes);
+    },
+    rows(notes) {
+      if (this.mode() === 'free') {
+        return notes.map((n) => ({ n, heard: heardHTML(n.cents), ...judgeFree(n.cents) }));
+      }
+      return alignNotes(notes, this.expected()).map(({ note, exp }) => {
+        if (!note) return { v: 'missed', score: 0, tHTML: exp.html, target: exp.cents };
+        if (!exp) return { n: note, heard: heardHTML(note.cents), v: 'extra' };
+        return { n: note, heard: heardHTML(note.cents), tHTML: exp.html, target: exp.cents, ...judge(note.cents, exp.cents) };
+      });
+    },
+    report(notes) {
+      const rows = this.rows(notes);
+      const scored = rows.filter((r) => r.v !== 'extra');
+      const overall = Math.round(mean(scored.map((r) => r.score)));
+      const tuned = rows.filter((r) => r.v === 'acc' || r.v === 'close').length;
+      const onSwara = rows.filter((r) => r.n && r.off != null && Math.abs(r.off) <= 50 && r.v !== 'outside');
+      const avgOff = mean(onSwara.map((r) => r.off));
+
+      // Per-swara summary, worst first.
+      const by = new Map();
+      for (const r of onSwara) {
+        if (!by.has(r.tHTML)) by.set(r.tHTML, []);
+        by.get(r.tHTML).push(r.off);
+      }
+      const perSwara = [...by.entries()].map(([h, offs]) => ({ h, n: offs.length, m: mean(offs) }))
+        .sort((a, b) => Math.abs(b.m) - Math.abs(a.m));
+
+      const tips = [];
+      for (const s of perSwara.filter((s) => Math.abs(s.m) > 12).slice(0, 3)) {
+        tips.push(s.m > 0
+          ? `${s.h} runs <b>sharp by ${Math.round(s.m)}¢</b>. Approach it from slightly below and let it settle; tension in the throat pushes notes up.`
+          : `${s.h} runs <b>flat by ${Math.round(-s.m)}¢</b>. Lift it slightly and keep your breath support steady through the note.`);
+      }
+      const outside = rows.filter((r) => r.v === 'outside' || r.v === 'wrong');
+      if (outside.length) tips.push(`${outside.length} note${outside.length > 1 ? 's' : ''} landed on a different swara from the one the raga needs. Use the Compare button to hear what you sang next to the correct swara.`);
+      const missed = rows.filter((r) => r.v === 'missed');
+      if (missed.length) tips.push(`${missed.length} swara${missed.length > 1 ? 's were' : ' was'} not heard. Hold each swara for at least half a second.`);
+      const wobbly = rows.filter((r) => r.n && r.n.sd > 20 && r.v !== 'extra');
+      if (wobbly.length) tips.push(`${wobbly.length} note${wobbly.length > 1 ? 's' : ''} wavered by more than ±20¢. For this exercise, sing plain swaras without gamakas.`);
+      if (!tips.length) tips.push('Every swara was in tune. Try the strict setting in Hold the shruti, or a raga you know less well.');
+
+      const bar = (r) => {
+        if (r.off == null) return '';
+        const x = 50 + Math.max(-50, Math.min(50, r.off));
+        return `<div class="offbar"><span class="z25"></span><span class="z10"></span><span class="mid"></span><span class="mk ${r.v}" style="left:${x}%"></span></div>`;
+      };
+      let k = 0;
+      const tr = rows.map((r) => {
+        const [pc, pl] = VERDICT[r.v];
+        const offTxt = r.off == null ? '–' : Math.abs(r.off) > 50 ? `${fmtCents(r.off)} from ${r.tHTML}` : `${fmtCents(r.off)} ${r.off > 5 ? 'sharp' : r.off < -5 ? 'flat' : ''}`;
+        const cmp = r.n && r.target != null
+          ? `<button class="btn" type="button" data-yours="${r.n.cents}" data-target="${r.target}" title="Plays your note, then the correct swara">Compare</button>`
+          : r.target != null ? `<button class="btn" type="button" data-target="${r.target}">Hear it</button>` : '';
+        return `<tr>
+          <td class="num">${++k}</td>
+          <td>${r.tHTML || '–'}</td>
+          <td>${r.heard || '<span class="muted">not heard</span>'}</td>
+          <td>${bar(r)}</td>
+          <td class="num">${offTxt}</td>
+          <td class="num">${r.n && r.v !== 'extra' ? '±' + Math.round(r.n.sd) + '¢' : '–'}</td>
+          <td><span class="pill ${pc}">${pl}</span></td>
+          <td>${cmp}</td></tr>`;
+      }).join('');
+
+      return `<div class="result">
+        <div class="stats">
+          <div class="stat"><span class="stat-label">Accuracy score</span><span class="stat-val">${overall}%</span></div>
+          <div class="stat"><span class="stat-label">In tune (within 25¢)</span><span class="stat-val">${tuned} of ${scored.length}</span></div>
+          <div class="stat"><span class="stat-label">Overall tendency</span><span class="stat-val">${onSwara.length ? fmtCents(avgOff) : '–'}</span></div>
+        </div>
+        <ul class="steps">${tips.map((t) => `<li>${t}</li>`).join('')}</ul>
+        ${perSwara.length ? `<div class="chips"><span class="label">By swara</span>${perSwara.map((s) => `<span class="pill ${Math.abs(s.m) <= 10 ? 'good' : Math.abs(s.m) <= 25 ? 'close' : 'warn'}">${s.h} ${fmtCents(s.m)}${s.n > 1 ? ` · ${s.n}×` : ''}</span>`).join('')}</div>` : ''}
+        <div class="table-wrap"><table class="result-table">
+          <thead><tr><th>#</th><th>Should be</th><th>You sang</th><th>Flat ← → sharp</th><th>Offset</th><th>Steadiness</th><th>Verdict</th><th></th></tr></thead>
+          <tbody>${tr}</tbody>
+        </table></div>
+        <p class="legend"><span><b>Accurate</b> within 10¢</span><span><b>Close</b> within 25¢</span><span><b>Off</b> within 50¢</span><span><b>Wrong swara</b> more than 50¢ away</span><span>100¢ is one semitone</span></p>
+      </div>`;
+    },
+  };
+
   // ---------- free singing ----------
   const free = {
     on: 0, off: 0, voiced: 0, outside: {},
@@ -499,6 +723,8 @@ const Voice = (() => {
     store.set('voiceRaga', raga.id);
     ladder.stop(); jumps.stop();
     ladder.preview(); jumps.preview();
+    if (check.rec) check.stop();
+    check.renderExpected();
     free.reset();
     draw(performance.now());
   }
@@ -518,6 +744,23 @@ const Voice = (() => {
     $('#rangeLow').addEventListener('click', () => rangeEx.start('low'));
     $('#rangeHigh').addEventListener('click', () => rangeEx.start('high'));
     $('#rangeClear').addEventListener('click', () => { range = null; store.set('range', null); renderRange(); ladder.preview(); jumps.preview(); });
+    $('#checkStart').addEventListener('click', () => check.toggle());
+    $('#checkMode').addEventListener('change', () => { if (check.rec) check.stop(); check.renderExpected(); });
+    $('#checkListen').addEventListener('click', () => {
+      const exp = check.expected();
+      Sound.playSeq(exp.map((e) => e.cents), {
+        dur: 0.6,
+        onNote: (i) => $$('#checkExpected .chip:not(.label)').forEach((c, k) => c.classList.toggle('play', k === i)),
+      });
+    });
+    $('#checkResult').addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-target]');
+      if (!b) return;
+      const items = b.dataset.yours != null
+        ? [{ cents: +b.dataset.yours, dur: 0.8 }, { rest: true, dur: 0.25 }, { cents: +b.dataset.target, dur: 0.9 }]
+        : [{ cents: +b.dataset.target, dur: 0.9 }];
+      Sound.playSeq(items);
+    });
     $('#holdStart').addEventListener('click', () => hold.start());
     $('#ladderStart').addEventListener('click', () => ladder.start());
     $('#ladderListen').addEventListener('click', () => ladder.listen());
@@ -529,7 +772,7 @@ const Voice = (() => {
     $('#jumpSet').addEventListener('change', () => { jumps.stop(); jumps.preview(); });
     $('#freeReset').addEventListener('click', () => free.reset());
     window.addEventListener('resize', () => draw(performance.now()));
-    setExercise('hold');
+    setExercise('check');
     setRaga(store.get('voiceRaga', 'm15'));
     renderRange();
   }

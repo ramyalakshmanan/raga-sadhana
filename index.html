@@ -209,11 +209,29 @@
 
   <div class="block">
     <div class="seg ex-tabs" id="exTabs" role="group" aria-label="Exercise">
+      <button type="button" data-v="check" aria-pressed="true">Check my singing</button>
       <button type="button" data-v="range" aria-pressed="false">Find my range</button>
-      <button type="button" data-v="hold" aria-pressed="true">Hold the shruti</button>
+      <button type="button" data-v="hold" aria-pressed="false">Hold the shruti</button>
       <button type="button" data-v="ladder" aria-pressed="false">Swara ladder</button>
       <button type="button" data-v="jumps" aria-pressed="false">Octave jumps</button>
       <button type="button" data-v="free" aria-pressed="false">Free singing</button>
+    </div>
+
+    <div class="ex" data-ex="check">
+      <p>Choose a raga above, press Start and sing. When you stop (or after 4 seconds of silence), you get a report on every swara you sang: which swara the app heard, how many cents sharp or flat you were, and how steadily you held it. Start the tambura first so you have Sa to sing against.</p>
+      <div class="row">
+        <label for="checkMode" class="sr-only">What to sing</label>
+        <select id="checkMode">
+          <option value="aa">Sing the arohanam and avarohanam</option>
+          <option value="free">Sing any swaras of the raga</option>
+        </select>
+        <button id="checkListen" class="btn" type="button">Listen first</button>
+        <button id="checkStart" class="btn primary" type="button">Start singing</button>
+      </div>
+      <div id="checkExpected" class="track"></div>
+      <p id="checkStatus" class="status"></p>
+      <div id="checkLive" class="track"></div>
+      <div id="checkResult"></div>
     </div>
 
     <div class="ex" data-ex="range" hidden>
@@ -227,7 +245,7 @@
       <div id="rangeResult"></div>
     </div>
 
-    <div class="ex" data-ex="hold">
+    <div class="ex" data-ex="hold" hidden>
       <p>Sustain one swara against the shruti and see how steady you are. Start the tambura for a reference. Singing Sa and Pa in tune is the foundation of every other exercise.</p>
       <div class="row">
         <div class="seg small" id="holdTarget" role="group" aria-label="Swara to hold">

@@ -7,6 +7,7 @@ A browser app for learning Carnatic music: melakarta theory, janya raga mapping,
 - **Learn**: the twelve swarasthanas, a step-by-step decoder for all 72 melakartas (madhyamam → chakra → position), the full mela chart, and the katapayadi rule.
 - **Ear training**: name a raga from its arohanam/avarohanam (foundation, look-alike, janya and melakarta levels) or name a swara against Sa. Wrong answers show both ragas side by side with the differing swaras highlighted.
 - **Janya map**: 43 janya ragas shown against their parent mela's swaras, with a quiz for janya → parent and swaras → mela number.
+- **Check my singing**: pick a raga, sing its arohanam/avarohanam or any of its swaras, and get a note-by-note report: the swara heard, cents sharp or flat, steadiness, and a verdict (accurate, close, off, wrong swara, not in raga, missed).
 - **Voice practice**: microphone pitch meter and trace over the raga's swaras, plus range finding with a shruti suggestion, shruti holding, swara ladders, octave jumps and free singing.
 
 Tones use just-intonation ratios over the chosen shruti (kattai 1–7), with a synthesised tambura drone.
