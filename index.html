@@ -6,37 +6,66 @@
 <title>Raga Sadhana</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rozha+One&family=Hind:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
 
-<header class="top">
-  <div class="brand">
-    <h1>Raga Sadhana</h1>
-    <p>Melakartas, janya ragas, ear training and voice practice</p>
-  </div>
-  <div class="shruti-bar">
-    <label for="shruti">Shruti</label>
-    <select id="shruti"></select>
-    <button id="droneBtn" class="btn toggle" type="button" aria-pressed="false">Tambura</button>
-    <label for="vol" class="sr-only">Volume</label>
-    <input id="vol" type="range" min="0" max="1" step="0.01" value="0.7">
+<header class="appbar">
+  <div class="appbar-inner">
+    <a class="brand" href="#learn" aria-label="Raga Sadhana, go to Learn">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect width="32" height="32" rx="9" fill="var(--accent)"/>
+        <path d="M6 17c2.2 0 2.2-6 4.4-6s2.2 10 4.4 10 2.2-14 4.4-14 2.2 10 4.4 10 1.6-4 2.4-4" fill="none" stroke="var(--accent-ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="brand-name">Raga Sadhana</span>
+    </a>
+
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button role="tab" type="button" data-tab="learn">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5v-15Z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v3H6.5A2.5 2.5 0 0 1 4 20.5Z"/></svg>
+        <span>Learn</span>
+      </button>
+      <button role="tab" type="button" data-tab="ear">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 3.5-3 4.5-3.5 7.5A3.5 3.5 0 0 1 11 20c-1.5 0-2.5-.8-3-2"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-1.5 2-1.5 3"/></svg>
+        <span>Ear training</span>
+      </button>
+      <button role="tab" type="button" data-tab="janya">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="12" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5v9M12 10.5 5.8 16.7M12 10.5l6.2 6.2"/></svg>
+        <span>Janya map</span>
+      </button>
+      <button role="tab" type="button" data-tab="voice">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+        <span>Voice</span>
+      </button>
+    </nav>
+
+    <div class="shruti-bar">
+      <label for="shruti" class="sr-only">Shruti</label>
+      <div class="select-pill">
+        <span class="select-pill-label">Sa</span>
+        <select id="shruti"></select>
+      </div>
+      <button id="droneBtn" class="btn toggle" type="button" aria-pressed="false" title="Play the tanpura drone">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h2M8 8v8M12 5v14M16 8v8M20 12h0"/></svg>
+        <span>Tanpura</span>
+      </button>
+      <label for="vol" class="sr-only">Volume</label>
+      <input id="vol" type="range" min="0" max="1" step="0.01" value="0.7">
+    </div>
   </div>
 </header>
-<div class="zari" aria-hidden="true"></div>
-
-<nav class="tabs" role="tablist" aria-label="Sections">
-  <button role="tab" type="button" data-tab="learn">Learn</button>
-  <button role="tab" type="button" data-tab="ear">Ear training</button>
-  <button role="tab" type="button" data-tab="janya">Janya map</button>
-  <button role="tab" type="button" data-tab="voice">Voice practice</button>
-</nav>
 
 <main>
 
 <!-- LEARN -->
 <section id="tab-learn" class="panel" hidden>
+  <div class="page-head">
+    <p class="eyebrow">Theory</p>
+    <h1>The building blocks</h1>
+    <p>The twelve swarasthanas, how all 72 melakartas are built, and how a raga's name hides its number.</p>
+  </div>
+
   <div class="block">
     <div class="block-head">
       <h2>The twelve swarasthanas</h2>
@@ -110,6 +139,12 @@
 
 <!-- EAR TRAINING -->
 <section id="tab-ear" class="panel" hidden>
+  <div class="page-head">
+    <p class="eyebrow">Ear training</p>
+    <h1>Train your ear</h1>
+    <p>Hear a raga or a single swara and name it. Wrong answers show you exactly what differs.</p>
+  </div>
+
   <div class="block">
     <div class="toolbar">
       <div class="seg" id="earMode" role="group" aria-label="Quiz type">
@@ -148,6 +183,12 @@
 
 <!-- JANYA MAP -->
 <section id="tab-janya" class="panel" hidden>
+  <div class="page-head">
+    <p class="eyebrow">Janya map</p>
+    <h1>From parent to janya</h1>
+    <p>See how each janya raga is drawn from its melakarta, then test yourself on the mapping.</p>
+  </div>
+
   <div class="block janya-layout">
     <aside class="janya-list">
       <label for="janyaFilter" class="sr-only">Filter ragas</label>
@@ -177,6 +218,12 @@
 
 <!-- VOICE -->
 <section id="tab-voice" class="panel" hidden>
+  <div class="page-head">
+    <p class="eyebrow">Voice practice</p>
+    <h1>Sing and see</h1>
+    <p>Sing against the tanpura and see exactly how close you are, swara by swara.</p>
+  </div>
+
   <div class="block">
     <div class="toolbar">
       <button id="micBtn" class="btn primary" type="button">Start microphone</button>

@@ -22,7 +22,7 @@ const App = (() => {
   }
 
   function init() {
-    $('#shruti').innerHTML = Theory.KATTAI.map((k, i) => `<option value="${i}">${k.k} kattai · ${k.note} · ${k.hz.toFixed(0)} Hz</option>`).join('');
+    $('#shruti').innerHTML = Theory.KATTAI.map((k, i) => `<option value="${i}">${k.k} kattai · ${k.note}</option>`).join('');
     $('#shruti').addEventListener('change', (e) => setShruti(+e.target.value));
 
     const vol = store.get('vol', 0.7);
@@ -36,6 +36,7 @@ const App = (() => {
     });
 
     $$('.tabs button').forEach((b) => b.addEventListener('click', () => go(b.dataset.tab)));
+    window.addEventListener('hashchange', () => go(location.hash.slice(1)));
 
     Learn.init();
     Ear.init();

@@ -150,7 +150,7 @@ const Voice = (() => {
       g.globalAlpha = 1;
     }
     // Raga swara lines.
-    g.font = '600 12px Hind, system-ui, sans-serif';
+    g.font = '600 12px Geist, system-ui, sans-serif';
     g.textBaseline = 'middle';
     const lines = [];
     for (let o = -2; o <= 2; o++) {
@@ -198,7 +198,7 @@ const Voice = (() => {
       g.beginPath(); g.arc(x(last.t), y(last.c), 5, 0, Math.PI * 2); g.fill();
     }
     if (!running) {
-      g.fillStyle = colors.muted; g.font = '14px Hind, system-ui, sans-serif'; g.textAlign = 'center';
+      g.fillStyle = colors.muted; g.font = '14px Geist, system-ui, sans-serif'; g.textAlign = 'center';
       g.fillText(`Start the microphone to see your pitch against ${raga.name}'s swaras`, padL + (w - padL) / 2, h / 2);
       g.textAlign = 'start';
     }
