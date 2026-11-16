@@ -78,7 +78,7 @@ const Ear = (() => {
     if (q.kind === 'raga') {
       $('#earPrompt').innerHTML = `<p>Listen to the arohanam and avarohanam. Which raga is it?</p>`;
       $('#earOptions').className = 'options';
-      $('#earOptions').innerHTML = q.options.map((r, i) => `<button class="opt" type="button" data-i="${i}">${ragaName(r)}<span class="opt-sub">${r.kind === 'mela' ? 'Melakarta ' + r.n : 'Janya of ' + r.parent}</span></button>`).join('');
+      $('#earOptions').innerHTML = q.options.map((r, i) => `<button class="opt" type="button" data-i="${i}">${ragaName(r)}<span class="opt-sub">${r.kind === 'mela' ? 'Melakarta ' + r.n : 'Janya of ' + T.melaLabel(T.MELAS[r.parent - 1])}</span></button>`).join('');
     } else {
       $('#earPrompt').innerHTML = `<p>You will hear Sa, a short gap, then another swara. Which swara is the second note?</p>`;
       $('#earOptions').className = 'options swaras';
