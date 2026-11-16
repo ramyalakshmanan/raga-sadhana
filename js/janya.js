@@ -9,8 +9,7 @@ const Janya = (() => {
     const groups = new Map();
     for (const j of T.JANYAS) {
       const m = T.MELAS[j.parent - 1];
-      const hit = !f || j.name.toLowerCase().includes(f) || m.name.toLowerCase().includes(f)
-        || (m.alias && m.alias.toLowerCase().includes(f)) || String(m.n) === f;
+      const hit = !f || RagaSearch.score(j, f) >= 40 || RagaSearch.score(m, f) >= 40;
       if (!hit) continue;
       if (!groups.has(j.parent)) groups.set(j.parent, []);
       groups.get(j.parent).push(j);

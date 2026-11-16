@@ -2,6 +2,7 @@
 const Learn = (() => {
   const T = Theory;
   let current = 15;
+  let melaPicker = null;
 
   // active: Map of semitone -> the name used (for highlighting), or null.
   function stripHTML(active) {
@@ -41,6 +42,7 @@ const Learn = (() => {
     const m = T.MELAS[n - 1];
     $('#melaNum').value = n;
     $('#melaSlider').value = n;
+    if (melaPicker) melaPicker.set(m);
     const k = ((n - 1) % 36) + 1;
     const base = n > 36 ? 36 : 0;
     const [R, G] = T.RG[m.chakraInHalf], [D, N] = T.DN[m.pos];
@@ -113,6 +115,11 @@ const Learn = (() => {
       Sound.playSeq(items, { dur: 0.45, onNote: (i) => ping(strip, i < 0 ? -1 : i % 12) });
     });
 
+    melaPicker = RagaSearch.create($('#melaPicker'), {
+      id: 'melaSearch', label: 'Find a melakarta by name', placeholder: 'Find a melakarta by name',
+      items: T.MELAS,
+      onPick: (m) => renderMela(m.n),
+    });
     renderChart();
     $('#melaChart').addEventListener('click', (e) => {
       const b = e.target.closest('button[data-n]');

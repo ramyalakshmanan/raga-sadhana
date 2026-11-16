@@ -210,6 +210,24 @@ input[type="range"] { accent-color: var(--accent); }
 .score { margin-left: auto; font-family: var(--font-mono); font-size: .82rem; color: var(--muted); font-variant-numeric: tabular-nums; background: var(--surface-2); padding: 5px 12px; border-radius: 999px; }
 .score:empty { display: none; }
 
+/* Raga search (combobox) */
+.picker { position: relative; flex: 1 1 260px; min-width: 0; max-width: 380px; }
+.picker input { width: 100%; padding-left: 36px; font-weight: 550; }
+.picker-icon { position: absolute; left: 12px; top: 50%; width: 16px; height: 16px; margin-top: -8px; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; pointer-events: none; }
+.picker-list {
+  position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; right: 0; min-width: 280px;
+  max-height: 340px; overflow-y: auto; margin: 0; padding: 6px; list-style: none;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-lg);
+}
+.picker-list li[role="option"] { padding: 8px 10px; border-radius: 9px; cursor: pointer; display: flex; flex-direction: column; gap: 1px; }
+.picker-list li[aria-selected="true"] { background: var(--surface-2); }
+.picker-list li[aria-selected="true"] .picker-name { color: var(--accent); }
+.picker-name { font-weight: 600; font-size: .92rem; }
+.picker-name mark { background: none; color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.picker-sub { font-size: .76rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.picker-empty { padding: 10px; color: var(--muted); font-size: .88rem; }
+.dec-controls .picker { flex: 1 1 240px; }
+
 /* ============================================================
    Swara glyphs
    ============================================================ */
@@ -456,7 +474,7 @@ button.link { border: 0; background: none; padding: 0; font: inherit; color: var
 /* ============================================================
    Panel entrance
    ============================================================ */
-.panel:not([hidden]) > * { animation: rise .35s cubic-bezier(.2, .7, .2, 1) both; }
+.panel:not([hidden]) > * { animation: rise .35s cubic-bezier(.2, .7, .2, 1) backwards; }
 .panel:not([hidden]) > *:nth-child(2) { animation-delay: .04s; }
 .panel:not([hidden]) > *:nth-child(3) { animation-delay: .08s; }
 .panel:not([hidden]) > *:nth-child(n+4) { animation-delay: .12s; }
@@ -486,7 +504,7 @@ button.link { border: 0; background: none; padding: 0; font: inherit; color: var
   .shruti-bar .btn.toggle { width: 36px; padding: 0; }
   .select-pill select { max-width: 150px; }
   .tabs {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 15; justify-content: space-around;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 15; justify-content: space-around; justify-self: stretch;
     border-radius: 0; padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
     background: var(--glass); -webkit-backdrop-filter: saturate(180%) blur(18px); backdrop-filter: saturate(180%) blur(18px);
     border-top: 1px solid var(--line);

@@ -9,6 +9,7 @@ const Voice = (() => {
   let raga = null, stSet = new Set();
   let running = false, raf = 0, lastT = 0;
   let exercise = 'check';
+  let ragaPicker = null;
   const hist = [], trace = [];
   let colors = {}, colorsAt = 0;
   let range = store.get('range', null); // {lowHz, highHz}
@@ -727,7 +728,7 @@ const Voice = (() => {
   function setRaga(id) {
     raga = T.byId[id] || T.find('Mayamalavagowla');
     stSet = new Set(T.sortedNames(raga).map((n) => T.SEMI[n]));
-    $('#vRaga').value = raga.id;
+    if (ragaPicker) ragaPicker.set(raga);
     store.set('voiceRaga', raga.id);
     ladder.stop(); jumps.stop();
     ladder.preview(); jumps.preview();
@@ -742,10 +743,11 @@ const Voice = (() => {
   }
 
   function init() {
-    const mOpts = T.MELAS.map((m) => `<option value="${m.id}">${m.n} · ${m.name}${m.alias ? ` (${m.alias})` : ''}</option>`).join('');
-    const jOpts = T.JANYAS.slice().sort((a, b) => a.name.localeCompare(b.name)).map((j) => `<option value="${j.id}">${j.name} · janya of ${j.parent}</option>`).join('');
-    $('#vRaga').innerHTML = `<optgroup label="Janya ragas">${jOpts}</optgroup><optgroup label="Melakartas">${mOpts}</optgroup>`;
-    $('#vRaga').addEventListener('change', (e) => setRaga(e.target.value));
+    ragaPicker = RagaSearch.create($('#vRagaPicker'), {
+      id: 'vRaga', label: 'Raga to practise', placeholder: 'Type a raga name or mela number',
+      items: [...T.JANYAS, ...T.MELAS],
+      onPick: (r) => setRaga(r.id),
+    });
     $('#micBtn').addEventListener('click', toggleMic);
     segment($('#exTabs'), setExercise);
     segment($('#holdTarget'), () => {});
