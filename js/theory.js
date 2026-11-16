@@ -50,7 +50,8 @@ const Theory = (() => {
   ];
   const ALIASES = { 8: 'Todi', 29: 'Sankarabharanam', 51: 'Pantuvarali', 65: 'Kalyani' };
 
-  // [name, parent mela, arohanam, avarohanam]. ' = tara sthayi, . = mandra sthayi.
+  // [name, parent mela, arohanam, avarohanam, extras]. ' = tara sthayi, . = mandra sthayi.
+  // extras.anya lists anya swaras: notes from outside the parent that make a raga bhashanga.
   const JANYA_DATA = [
     ['Revati', 2, "S R1 M1 P N2 S'", "S' N2 P M1 R1 S"],
     ['Dhanyasi', 8, "S G2 M1 P N2 S'", "S' N2 D1 P M1 G2 R1 S"],
@@ -75,6 +76,8 @@ const Theory = (() => {
     ['Sri', 22, "S R2 M1 P N2 S'", "S' N2 P D2 N2 P M1 R2 G2 R2 S"],
     ['Shivaranjani', 22, "S R2 G2 P D2 S'", "S' D2 P G2 R2 S"],
     ['Mohanam', 28, "S R2 G3 P D2 S'", "S' D2 P G3 R2 S"],
+    // Bhashanga: kakali nishadam (N3) is an anya swara, heard in the mandra phrase S Ṇ P̣ Ḍ S.
+    ['Kambhoji', 28, "S R2 G3 M1 P D2 S'", "S' N2 D2 P M1 G3 R2 S N3. P. D2. S", { anya: ['N3'] }],
     ['Kedaragowla', 28, "S R2 M1 P N2 S'", "S' N2 D2 P M1 G3 R2 S"],
     ['Yadukula Kambhoji', 28, "S R2 M1 P D2 S'", "S' N2 D2 P M1 G3 R2 S"],
     ['Valaji', 28, "S G3 P D2 N2 S'", "S' N2 D2 P G3 S"],
@@ -131,8 +134,9 @@ const Theory = (() => {
   }
   const MELAS = Array.from({ length: 72 }, (_, i) => melaInfo(i + 1));
   const slug = (s) => s.toLowerCase().replace(/[^a-z]+/g, '-');
-  const JANYAS = JANYA_DATA.map(([name, parent, a, v]) => ({
+  const JANYAS = JANYA_DATA.map(([name, parent, a, v, extra = {}]) => ({
     id: 'j-' + slug(name), kind: 'janya', name, alias: '', parent, aro: a.split(' '), ava: v.split(' '),
+    anya: extra.anya || [],
   }));
   const ALL = [...MELAS, ...JANYAS];
   const byId = Object.fromEntries(ALL.map((r) => [r.id, r]));
@@ -141,16 +145,20 @@ const Theory = (() => {
   const namesIn = (toks) => new Set(toks.map((t) => parseToken(t).name));
   function swaraSet(r) { return new Set([...namesIn(r.aro), ...namesIn(r.ava)]); }
   function sortedNames(r) { return [...swaraSet(r)].sort((a, b) => SEMI[a] - SEMI[b]); }
+  // The raga's own swaras: everything it uses except borrowed anya swaras.
+  function ownSwaras(r) { const a = new Set(r.anya || []); return new Set([...swaraSet(r)].filter((x) => !a.has(x))); }
 
   function classify(r) {
     const label = { 5: 'Audava', 6: 'Shadava', 7: 'Sampurna' };
-    const cnt = (t) => { const n = namesIn(t).size; return label[n] || n + ' swaras'; };
+    const anya = new Set(r.anya || []);
+    const cnt = (t) => { const n = [...namesIn(t)].filter((x) => !anya.has(x)).length; return label[n] || n + ' swaras'; };
     const mono = (toks, dir) => toks.map(parseToken).every((x, i, a) => i === 0 || (dir > 0 ? x.cents > a[i - 1].cents : x.cents < a[i - 1].cents));
     const vakra = !mono(r.aro, 1) || !mono(r.ava, -1);
-    return { type: `${cnt(r.aro)}–${cnt(r.ava)}`, vakra };
+    return { type: `${cnt(r.aro)}–${cnt(r.ava)}`, vakra, bhashanga: anya.size > 0 };
   }
+  // Melakartas that contain every one of the raga's own swaras (anya swaras don't count).
   function consistentMelas(r) {
-    const s = [...swaraSet(r)];
+    const s = [...ownSwaras(r)];
     return MELAS.filter((m) => s.every((x) => m.swaras.includes(x)));
   }
   function varjya(r) {
@@ -228,7 +236,7 @@ const Theory = (() => {
   return {
     RATIOS, CENTS, SEMI, POSITIONS, FULL_NAME, CHAKRAS, RG, DN, PA, KATTAI,
     MELAS, JANYAS, ALL, byId, find,
-    parseToken, tokObj, centsOf, swaraSet, sortedNames, classify, consistentMelas, varjya,
+    parseToken, tokObj, centsOf, swaraSet, ownSwaras, sortedNames, classify, consistentMelas, varjya,
     nearest, nameFor, swaraHTML, swaraText, tokText, label, seqHTML, melaLabel, derivation,
     getNumbering: () => scheme,
     setNumbering(v) {

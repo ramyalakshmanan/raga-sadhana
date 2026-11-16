@@ -15,7 +15,7 @@ const Quiz = (() => {
   const TYPE = Object.fromEntries(TYPES.map((t) => [t.id, t]));
 
   const POPULAR = ['Mayamalavagowla', 'Sankarabharanam', 'Kalyani', 'Kharaharapriya', 'Todi', 'Harikambhoji',
-    'Natabhairavi', 'Keeravani', 'Shanmukhapriya', 'Charukesi', 'Mohanam', 'Hindolam', 'Hamsadhwani',
+    'Natabhairavi', 'Kambhoji', 'Keeravani', 'Shanmukhapriya', 'Charukesi', 'Mohanam', 'Hindolam', 'Hamsadhwani',
     'Madhyamavati', 'Abheri', 'Bilahari', 'Sriranjani', 'Malahari', 'Saveri', 'Arabhi', 'Kedaragowla',
     'Amritavarshini', 'Hamsanandi', 'Vasantha', 'Shivaranjani', 'Revati', 'Suddha Saveri', 'Shuddha Dhanyasi',
     'Kalyanavasantham', 'Mohanakalyani', 'Nata', 'Dhanyasi', 'Hemavati', 'Simhendramadhyamam', 'Dharmavati',
@@ -126,7 +126,7 @@ const Quiz = (() => {
       const janyas = pool().filter((r) => r.kind === 'janya');
       const j = fresh(janyas.length ? janyas : T.JANYAS);
       const parent = T.MELAS[j.parent - 1];
-      const used = [...T.swaraSet(j)];
+      const used = [...T.ownSwaras(j)];   // anya swaras don't decide the parent
       const cands = new Set(T.consistentMelas(j).map((m) => m.n));
       const others = T.MELAS.filter((m) => !cands.has(m.n)).map((m) => ({ m, miss: used.filter((s) => !m.swaras.includes(s)).length }));
       let d = sample(others.filter((o) => o.miss === 1).map((o) => o.m), 3);
@@ -137,7 +137,7 @@ const Quiz = (() => {
         prompt: `<p>Which melakarta is the parent of <b>${j.name}</b>?</p>
           <details class="hint"><summary>Show its swaras</summary>${scaleHTML(j)}</details>`,
         options: shuffle([melaOpt(parent, true), ...d.map((m) => melaOpt(m, false))]),
-        explain: `${j.name} uses ${T.sortedNames(j).map((x) => T.swaraHTML(x)).join(' ')}. ${n === 1
+        explain: `${j.name}'s own swaras are ${used.sort((a, b) => T.SEMI[a] - T.SEMI[b]).map((x) => T.swaraHTML(x)).join(' ')}${j.anya.length ? ` (it also borrows the anya swara ${j.anya.map((x) => T.swaraHTML(x)).join(' ')}, which doesn't count)` : ''}. ${n === 1
           ? `Only ${T.melaLabel(parent)} contains all of these.`
           : `${n} melakartas contain all of these; tradition assigns it to ${T.melaLabel(parent)}. Each wrong option is missing at least one of its swaras.`}`,
       };

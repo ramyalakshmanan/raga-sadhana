@@ -29,11 +29,15 @@ const Janya = (() => {
     if (r.kind === 'mela') {
       return `A melakarta: all seven swaras, straight up and straight down. ${T.derivation(r)}`;
     }
-    const used = T.sortedNames(r).map((x) => T.swaraHTML(x)).join(' ');
+    const own = [...T.ownSwaras(r)].sort((a, b) => T.SEMI[a] - T.SEMI[b]);
+    const used = own.map((x) => T.swaraHTML(x)).join(' ');
     const cands = T.consistentMelas(r);
-    if (cands.length === 1) return `It uses ${used}. Only one melakarta contains every one of these, so the parent is fixed: ${T.melaLabel(parent)}.`;
+    const anyaNote = r.anya && r.anya.length
+      ? ` It is <b>bhashanga</b>: it also borrows ${r.anya.map((x) => `${T.swaraHTML(x)} (${T.FULL_NAME[x].toLowerCase()})`).join(' and ')}, an anya swara from outside the parent. Anya swaras don't count when finding the parent.`
+      : '';
+    if (cands.length === 1) return `Its own swaras are ${used}. Only one melakarta contains every one of these, so the parent is fixed: ${T.melaLabel(parent)}.${anyaNote}`;
     const shown = cands.slice(0, 6).map((m) => `${m.n} ${m.name}`).join(', ');
-    return `It uses ${used}. Because it skips swaras, ${cands.length} melakartas contain all of them (${shown}${cands.length > 6 ? ', …' : ''}). Tradition assigns it to ${T.melaLabel(parent)}, the mela whose missing swaras match how the raga is sung.`;
+    return `It uses ${used}. Because it skips swaras, ${cands.length} melakartas contain all of them (${shown}${cands.length > 6 ? ', …' : ''}). Tradition assigns it to ${T.melaLabel(parent)}, the mela whose missing swaras match how the raga is sung.${anyaNote}`;
   }
 
   function show(id) {
@@ -49,7 +53,7 @@ const Janya = (() => {
       const st = a && v ? 'both' : a ? 'aro' : v ? 'ava' : 'varjya';
       const lbl = { both: 'up and down', aro: 'arohanam only', ava: 'avarohanam only', varjya: 'varjya' }[st];
       return `<div class="pcell ${st}">${T.swaraHTML(n)}<span>${lbl}</span></div>`;
-    }).join('');
+    }).join('') + (r.anya || []).map((n) => `<div class="pcell anya">${T.swaraHTML(n)}<span>anya swara</span></div>`).join('');
     const varj = T.varjya(r);
     $('#janyaDetail').innerHTML = `
       <div>
@@ -58,6 +62,7 @@ const Janya = (() => {
         <div class="pills">
           <span class="pill accent">${cls.type}</span>
           ${cls.vakra ? '<span class="pill warn">Vakra</span>' : ''}
+          ${cls.bhashanga ? `<span class="pill bad">Bhashanga · anya swara ${r.anya.map((x) => T.swaraHTML(x)).join(' ')}</span>` : ''}
           ${varj.length ? `<span class="pill">Varjya: ${varj.map((x) => T.swaraHTML(x)).join(' ')}</span>` : ''}
         </div>
       </div>

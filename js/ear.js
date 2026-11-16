@@ -25,6 +25,7 @@ const Ear = (() => {
     ['Hamsanandi', 'Purvikalyani', 'Mohanakalyani', 'Vasantha'],
     ['Bhupalam', 'Revagupti', 'Revati', 'Madhyamavati'],
     ['Kedaragowla', 'Yadukula Kambhoji', 'Madhyamavati', 'Manirangu'],
+    ['Kambhoji', 'Yadukula Kambhoji', 'Harikambhoji', 'Kedaragowla'],
   ];
 
   let mode = 'raga', level = 'foundation', q = null, answered = false;
