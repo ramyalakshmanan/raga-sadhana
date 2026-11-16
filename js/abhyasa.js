@@ -4,26 +4,9 @@
 const Abhyasa = (() => {
   const T = Theory;
 
-  // ---------- talas ----------
-  const L = (n) => ({ type: 'laghu', n }), D = { type: 'drutam', n: 2 };
-  const TALAS = {
-    adi: { name: 'Adi tala', angas: [L(4), D, D] },
-    dhruva: { name: 'Dhruva tala', angas: [L(4), D, L(4), L(4)] },
-    matya: { name: 'Matya tala', angas: [L(4), D, L(4)] },
-    rupaka: { name: 'Rupaka tala', angas: [D, L(4)] },
-    triputa: { name: 'Tisra triputa tala', angas: [L(3), D, D] },
-    eka: { name: 'Eka tala', angas: [L(4)] },
-  };
-  // Beat actions: laghu = clap then finger counts, drutam = clap then wave.
-  function talaBeats(tala) {
-    const out = [];
-    TALAS[tala].angas.forEach((a, ai) => {
-      for (let i = 0; i < a.n; i++) {
-        out.push({ label: i === 0 ? 'clap' : a.type === 'laghu' ? String(i) : 'wave', clap: i === 0, angaEnd: i === a.n - 1, anga: ai });
-      }
-    });
-    return out;
-  }
+  // ---------- talas (shared definitions in tala.js) ----------
+  const talaBeats = (t) => Tala.beats(t);
+  const talaName = (t) => Tala.def(t).name;
 
   // ---------- exercise patterns ----------
   // Written for a 7-swara raga: s r g m p d n = 0..6, capitals = tara sthayi, ".n" = mandra, "," = karvai (hold).
@@ -179,7 +162,7 @@ const Abhyasa = (() => {
     }
     $('#abSheet').innerHTML = lines.join('');
     $('#abSheet').classList.toggle('aakaram', voiceMode === 'aa');
-    $('#abTala').innerHTML = `<span class="label">${TALAS[sheet.ex.tala].name}</span><div class="tala-beats">${beats.map((b, i) => `<span class="beat${b.clap ? ' clap' : ''}${b.angaEnd && i < beats.length - 1 ? ' gap' : ''}" data-b="${i}">${b.label}</span>`).join('')}</div>`;
+    $('#abTala').innerHTML = `<span class="label">${talaName(sheet.ex.tala)}</span><div class="tala-beats">${beats.map((b, i) => `<span class="beat${b.clap ? ' clap' : ''}${b.angaEnd && i < beats.length - 1 ? ' gap' : ''}" data-b="${i}">${b.label}</span>`).join('')}</div>`;
   }
 
   function renderPicker() {

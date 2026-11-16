@@ -267,7 +267,7 @@ const Sound = (() => {
   // at: optional AudioContext time to start, so a sequence can line up with tala clicks.
   // Each swara is a pluck; like a single string, a new pluck damps the previous note,
   // and the last note before a rest or the end rings out.
-  function playSeq(items, { dur = 0.5, onNote, at } = {}) {
+  function playPluck(items, { dur = 0.5, onNote, at } = {}) {
     init();
     stopVoice();
     let cancelled = false, endTimer = 0, resolve;
@@ -323,14 +323,137 @@ const Sound = (() => {
     return handle;
   }
 
+  // ---- sustained instruments: violin, flute, sung "aa" ----
+  // One continuous tone that moves between swaras, as these instruments do. Vibrato is
+  // symmetric around the pitch and builds in after the attack, so every swara stays in tune.
+  const PRESETS = {
+    violin: { amps: (k) => 1 / k, nh: 24, eq: [[550, 1.2, 5], [1500, 1.5, 3], [3000, 2, 2]], lp: 4200,
+      attack: 0.05, vib: { rate: 5.6, depth: 14, delay: 0.22 }, glide: 0.035, level: 0.2, legato: 0.75 },
+    flute: { amps: (k) => [1, 0.32, 0.12, 0.06, 0.03][k - 1] || 0, nh: 5, eq: [], lp: 5000,
+      attack: 0.06, vib: { rate: 5.0, depth: 8, delay: 0.25 }, glide: 0.03, level: 0.34, legato: 0.6, breath: 0.05 },
+    voice: { amps: (k) => 1 / Math.pow(k, 1.1), nh: 30, vowel: [[800, 6, 1], [1150, 7, 0.6], [2900, 9, 0.25]], lp: 5000,
+      attack: 0.07, vib: { rate: 5.4, depth: 12, delay: 0.2 }, glide: 0.05, level: 0.55, legato: 0.7 },
+  };
+  function playSustained(items, { dur = 0.5, onNote, at } = {}, P) {
+    const t0 = at != null ? Math.max(at, ctx.currentTime + 0.02) : ctx.currentTime + 0.05;
+    const real = new Float32Array(P.nh + 1), imag = new Float32Array(P.nh + 1);
+    for (let k = 1; k <= P.nh; k++) imag[k] = P.amps(k);
+    const osc = ctx.createOscillator();
+    osc.setPeriodicWave(ctx.createPeriodicWave(real, imag));
+    const vib = ctx.createOscillator(), vibG = ctx.createGain();
+    vib.frequency.value = P.vib.rate; vibG.gain.value = 0;
+    vib.connect(vibG).connect(osc.detune);
+    const g = ctx.createGain(); g.gain.value = 0;
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = P.lp;
+    lp.connect(g).connect(voiceBus);
+    if (P.vowel) {
+      // Sung "aa": the tone passes through the vowel's formant resonances.
+      const direct = ctx.createGain(); direct.gain.value = 0.3;
+      osc.connect(direct).connect(lp);
+      for (const [f, q, lvl] of P.vowel) {
+        const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = q;
+        const bg = ctx.createGain(); bg.gain.value = lvl * 4;
+        osc.connect(bp).connect(bg).connect(lp);
+      }
+    } else {
+      let node = osc;
+      for (const [f, q, gain] of P.eq) {
+        const pk = ctx.createBiquadFilter(); pk.type = 'peaking'; pk.frequency.value = f; pk.Q.value = q; pk.gain.value = gain;
+        node.connect(pk); node = pk;
+      }
+      node.connect(lp);
+    }
+    let noise = null, ng = null;
+    if (P.breath) {
+      const nb = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate), nd = nb.getChannelData(0);
+      for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+      noise = ctx.createBufferSource(); noise.buffer = nb; noise.loop = true;
+      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2200; bp.Q.value = 0.8;
+      ng = ctx.createGain(); ng.gain.value = 0;
+      noise.connect(bp).connect(ng).connect(voiceBus);
+    }
+
+    let t = t0, afterRest = true, prevCents = null;
+    const times = [];
+    items.forEach((it, i) => {
+      const d = (it && it.dur) || dur;
+      if (it && it.rest) {
+        g.gain.setTargetAtTime(0, t, 0.03); if (ng) ng.gain.setTargetAtTime(0, t, 0.03);
+        times.push(null); t += d; afterRest = true; prevCents = null;
+        return;
+      }
+      const c = centsOfItem(it), f = freq(c);
+      if (afterRest) osc.frequency.setValueAtTime(f, t); else osc.frequency.setTargetAtTime(f, t, P.glide);
+      g.gain.setTargetAtTime(P.level, t, P.attack / 3);
+      if (ng) ng.gain.setTargetAtTime(P.breath, t, P.attack / 3);
+      // Vibrato starts flat and builds once the note has settled.
+      vibG.gain.setValueAtTime(0, t);
+      if (d > P.vib.delay + 0.1) vibG.gain.linearRampToValueAtTime(P.vib.depth, t + Math.min(d, P.vib.delay + 0.3));
+      // Re-articulate repeated swaras (janta) and before rests; otherwise move on smoothly.
+      const next = items[i + 1];
+      const nextCents = next && !next.rest ? centsOfItem(next) : null;
+      const end = t + d;
+      const dip = nextCents == null || Math.abs(nextCents - c) < 1 ? 0.04 : P.legato;
+      g.gain.setTargetAtTime(P.level * dip, end - 0.04, 0.012);
+      times.push(t); t = end; afterRest = false; prevCents = c;
+    });
+    g.gain.setTargetAtTime(0, t, 0.06); if (ng) ng.gain.setTargetAtTime(0, t, 0.06);
+    osc.start(t0); vib.start(t0); osc.stop(t + 0.6); vib.stop(t + 0.6);
+    if (noise) { noise.start(t0); noise.stop(t + 0.6); }
+
+    const now = ctx.currentTime;
+    const timers = times.map((tt, i) => (tt == null ? 0 : setTimeout(() => onNote && onNote(i), (tt - now) * 1000)));
+    let resolve;
+    const done = new Promise((r) => (resolve = r));
+    const handle = {
+      done,
+      stop() {
+        timers.forEach(clearTimeout); clearTimeout(endTimer);
+        const n = ctx.currentTime;
+        try {
+          g.gain.cancelScheduledValues(n); g.gain.setTargetAtTime(0, n, 0.02);
+          osc.stop(n + 0.1); vib.stop(n + 0.1); if (noise) noise.stop(n + 0.1);
+        } catch { /* already stopped */ }
+        onNote && onNote(-1);
+        resolve(false);
+      },
+    };
+    const endTimer = setTimeout(() => {
+      onNote && onNote(-1);
+      if (current === handle) current = null;
+      resolve(true);
+    }, (t - now) * 1000 + 80);
+    current = handle;
+    return handle;
+  }
+
+  // The instrument for every melody in the app.
+  const INSTRUMENTS = [
+    { id: 'veena', name: 'Veena', desc: 'Plucked string, like the tanpura' },
+    { id: 'violin', name: 'Violin', desc: 'Bowed, sliding between swaras' },
+    { id: 'flute', name: 'Flute', desc: 'Soft and breathy' },
+    { id: 'voice', name: 'Voice', desc: 'Sung on “aa”' },
+  ];
+  let instrument = 'veena';
+  try { const saved = JSON.parse(localStorage.getItem('rs.instrument')); if (INSTRUMENTS.some((x) => x.id === saved)) instrument = saved; } catch { /* default */ }
+
+  // items: swara tokens, cents numbers, or {cents, dur} / {rest: true, dur}.
+  // at: optional AudioContext time to start, so a sequence can line up with tala clicks.
+  function playSeq(items, opts = {}) {
+    init();
+    if (instrument === 'veena') return playPluck(items, opts);
+    stopVoice();
+    return playSustained(items, opts, PRESETS[instrument]);
+  }
+
   // Tala click at an AudioContext time. level: 'sam' (first beat), 'clap', 'soft' (finger count / wave).
   const clicks = new Set();
   function click(at, level = 'clap') {
     init();
     const o = ctx.createOscillator(), g = ctx.createGain();
     o.type = 'triangle';
-    o.frequency.value = level === 'sam' ? 1760 : level === 'clap' ? 1320 : 990;
-    const peak = level === 'sam' ? 0.5 : level === 'clap' ? 0.32 : 0.16;
+    o.frequency.value = level === 'sam' ? 1760 : level === 'clap' ? 1320 : level === 'sub' ? 760 : 990;
+    const peak = level === 'sam' ? 0.5 : level === 'clap' ? 0.32 : level === 'sub' ? 0.07 : 0.16;
     g.gain.setValueAtTime(0.0001, at);
     g.gain.exponentialRampToValueAtTime(peak, at + 0.004);
     g.gain.exponentialRampToValueAtTime(0.0001, at + 0.06);
@@ -343,7 +466,15 @@ const Sound = (() => {
 
   return {
     init, startDrone, stopDrone, playSeq, stopVoice, click, stopClicks, prepareVoice,
+    INSTRUMENTS,
+    getInstrument: () => instrument,
+    setInstrument(id) {
+      if (!INSTRUMENTS.some((x) => x.id === id)) return;
+      instrument = id;
+      try { localStorage.setItem('rs.instrument', JSON.stringify(id)); } catch { /* not saved */ }
+    },
     _nearestPluck: (f) => nearestPluck(f),
+    _tap() { init(); const a = ctx.createAnalyser(); a.fftSize = 4096; voiceBus.connect(a); return a; },
     now: () => init().currentTime,
     isDroneOn: () => droneOn,
     tanpuraReady: () => prepareTanpura().then(() => tanBufs),

@@ -409,6 +409,76 @@ input[type="range"] { accent-color: var(--accent); }
 .stat-val.small-val { font-size: 1.05rem; letter-spacing: -0.01em; padding-top: 8px; }
 @media (max-width: 760px) { .ab-report { grid-template-columns: 1fr; } }
 
+/* Sound settings panel */
+.sound-menu { position: relative; }
+.sound-panel {
+  position: absolute; right: 0; top: calc(100% + 10px); z-index: 40; width: 280px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow-lg);
+  padding: 14px; display: flex; flex-direction: column; gap: 10px;
+}
+.sound-panel #vol { width: 100%; }
+.instrument-list { display: grid; gap: 4px; }
+.instrument-list button {
+  display: grid; grid-template-columns: 18px 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: center;
+  text-align: left; border: 0; background: none; padding: 8px 10px; border-radius: 10px; cursor: pointer;
+}
+.instrument-list button::before {
+  content: ''; grid-row: 1 / 3; width: 16px; height: 16px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--line-strong);
+}
+.instrument-list button[aria-checked="true"]::before { box-shadow: inset 0 0 0 5px var(--accent); }
+.instrument-list button:hover { background: var(--surface-2); }
+.instrument-list button[aria-checked="true"] { background: var(--accent-soft); }
+.inst-name { font-weight: 600; font-size: .92rem; }
+.inst-desc { font-size: .78rem; color: var(--muted); grid-column: 2; }
+
+/* Learn sub-sections */
+.subnav { align-self: flex-start; margin-bottom: 4px; }
+.panel-group { display: flex; flex-direction: column; gap: 18px; }
+
+/* Talas */
+.anga-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.anga-card { background: var(--surface-2); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+.anga-card p { color: var(--ink-2); font-size: .9rem; }
+.anga-sym { font-family: var(--font-mono); font-size: 1.6rem; font-weight: 500; color: var(--accent); line-height: 1; }
+.kriya { font-family: var(--font-mono); font-size: .8rem !important; color: var(--muted) !important; }
+.tala-info { display: flex; flex-direction: column; gap: 2px; }
+.tala-big { display: flex; flex-wrap: wrap; gap: 14px 18px; padding: 16px; background: var(--surface-2); border-radius: 14px; }
+.tanga { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.tanga-beats { display: flex; gap: 6px; flex-wrap: wrap; }
+.tanga-name { font-size: .68rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 650; padding-left: 2px; }
+.tbeat {
+  width: 54px; height: 58px; border-radius: 12px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; transition: background .06s, transform .06s;
+}
+.tbeat .tnum { font-family: var(--font-mono); font-size: .66rem; color: var(--muted); }
+.tbeat .tkriya { font-weight: 650; font-size: .86rem; }
+.tbeat.clap .tkriya { color: var(--accent); }
+.tbeat.now { background: var(--accent); box-shadow: none; transform: scale(1.06); }
+.tbeat.now .tkriya, .tbeat.now .tnum { color: var(--accent-ink); }
+.tala-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.tala-card {
+  text-align: left; border: 1px solid var(--line-strong); background: var(--surface); border-radius: 14px; padding: 14px 16px;
+  cursor: pointer; display: flex; flex-direction: column; gap: 4px; transition: border-color .15s, background .15s;
+}
+.tala-card:hover { border-color: var(--accent); }
+.tala-card.current { border-color: var(--accent); background: var(--accent-soft); }
+.tala-card-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.tala-count { font-size: 1.3rem; color: var(--accent); font-weight: 500; }
+.tala-card-use { font-size: .84rem; color: var(--ink-2); }
+.tala35 { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 620px; font-size: .88rem; }
+.tala35 th, .tala35 td { padding: 6px 8px; text-align: center; border-bottom: 1px solid var(--line); }
+.tala35 tbody th { text-align: left; font-weight: 650; }
+.tala35 thead th { font-size: .78rem; font-weight: 650; }
+.tala35 td button {
+  width: 100%; min-width: 46px; border: 0; background: var(--surface-2); border-radius: 8px; padding: 6px 0; cursor: pointer;
+  font-family: var(--font-mono); font-weight: 500; transition: background .12s;
+}
+.tala35 td button:hover { background: var(--surface-3); }
+.tala35 td button.common { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.tala35 td button.current { background: var(--accent); color: var(--accent-ink); }
+@media (max-width: 760px) { .anga-cards { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .sound-panel { position: fixed; left: 12px; right: 12px; top: 64px; width: auto; } }
+
 /* Theme toggle */
 .icon-btn { width: 36px; height: 36px; padding: 0; border-radius: 999px; }
 .icon-btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }

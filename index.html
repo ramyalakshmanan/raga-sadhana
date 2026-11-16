@@ -59,8 +59,17 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h2M8 8v8M12 5v14M16 8v8M20 12h0"/></svg>
         <span>Tanpura</span>
       </button>
-      <label for="vol" class="sr-only">Volume</label>
-      <input id="vol" type="range" min="0" max="1" step="0.01" value="0.7">
+      <div class="sound-menu">
+        <button id="soundBtn" class="btn icon-btn" type="button" aria-expanded="false" aria-controls="soundPanel" aria-label="Sound settings" title="Sound settings">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg>
+        </button>
+        <div id="soundPanel" class="sound-panel" hidden>
+          <p class="label">Instrument for melodies</p>
+          <div id="instrumentList" class="instrument-list" role="radiogroup" aria-label="Instrument for melodies"></div>
+          <label for="vol" class="label">Volume</label>
+          <input id="vol" type="range" min="0" max="1" step="0.01" value="0.7">
+        </div>
+      </div>
     </div>
   </div>
 </header>
@@ -72,8 +81,15 @@
   <div class="page-head">
     <p class="eyebrow">Theory</p>
     <h1>The building blocks</h1>
-    <p>The twelve swarasthanas, how all 72 melakartas are built, and how a raga's name hides its number.</p>
+    <p>The twelve swarasthanas, how all 72 melakartas are built, and the talas that carry the music.</p>
   </div>
+
+  <div class="seg subnav" id="learnNav" role="group" aria-label="Learn sections">
+    <button type="button" data-v="ragas" aria-pressed="true">Swaras &amp; melakartas</button>
+    <button type="button" data-v="talas" aria-pressed="false">Talas</button>
+  </div>
+
+  <div id="learnRagas" class="panel-group">
 
   <div class="block">
     <div class="block-head">
@@ -143,6 +159,81 @@
         <dt>Vakra</dt><dd>A zigzag order, like Kedaram's S M G M P N Ṡ.</dd>
         <dt>Upanga · Bhashanga</dt><dd>An upanga raga stays within its parent's swaras. A bhashanga raga borrows an outside swara (anya swara), as Bhairavi and Kambhoji do. This app's library lists upanga forms.</dd>
       </dl>
+    </div>
+  </div>
+  </div>
+
+  <div id="learnTalas" class="panel-group" hidden>
+    <div class="block">
+      <div class="block-head">
+        <h2>What is a tala?</h2>
+        <p>A tala is the rhythmic cycle a piece is set in. One full cycle is an <b>avartanam</b>, each beat in it is an <b>akshara</b>, and the first beat, where the cycle starts again, is <b>samam</b>. Singers keep tala with the hand, using claps, finger counts and waves called <b>kriyas</b>, so the cycle can be seen as well as felt. Every tala is built from three parts, the <b>angas</b>:</p>
+      </div>
+      <div class="anga-cards">
+        <div class="anga-card"><span class="anga-sym">I</span><h3>Laghu</h3><p>A clap, then finger counts starting from the little finger. Its length depends on the jati: 3, 4, 5, 7 or 9 beats.</p><p class="kriya">clap · 1 · 2 · 3</p></div>
+        <div class="anga-card"><span class="anga-sym">O</span><h3>Drutam</h3><p>Two beats: a clap, then a wave of the hand with the palm turned up.</p><p class="kriya">clap · wave</p></div>
+        <div class="anga-card"><span class="anga-sym">U</span><h3>Anudrutam</h3><p>A single clap: one beat.</p><p class="kriya">clap</p></div>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="block-head">
+        <h2>Tala player</h2>
+        <p>Choose a tala to hear and see its cycle. The loudest click is samam; claps are stronger than counts and waves. Gati (nadai) fills each beat with 3, 4, 5 or 7 soft pulses.</p>
+      </div>
+      <div class="ab-controls">
+        <div class="ab-field">
+          <label for="talaSelect" class="label">Tala</label>
+          <select id="talaSelect"></select>
+        </div>
+        <div class="ab-field">
+          <label for="talaTempo" class="label">Tempo · <span id="talaTempoVal" class="mono">60</span> beats a minute</label>
+          <input id="talaTempo" type="range" min="30" max="140" step="2" value="60">
+        </div>
+        <div class="ab-field">
+          <span class="label">Gati (nadai)</span>
+          <div class="seg" id="talaGati" role="group" aria-label="Gati">
+            <button type="button" data-v="1" aria-pressed="true">Beats only</button>
+            <button type="button" data-v="3" aria-pressed="false">Tisra 3</button>
+            <button type="button" data-v="4" aria-pressed="false">Chatusra 4</button>
+            <button type="button" data-v="5" aria-pressed="false">Khanda 5</button>
+            <button type="button" data-v="7" aria-pressed="false">Misra 7</button>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <button id="talaPlay" class="btn primary" type="button">Play</button>
+        <span id="talaCount" class="status mono"></span>
+      </div>
+      <div id="talaInfo" class="tala-info"></div>
+      <div id="talaBig" class="tala-big"></div>
+    </div>
+
+    <div class="block">
+      <div class="block-head">
+        <h2>Talas in everyday use</h2>
+        <p>Most of what you will sing is in a handful of talas. Choose one to load it into the player.</p>
+      </div>
+      <div id="talaCommon" class="tala-cards"></div>
+    </div>
+
+    <div class="block">
+      <div class="block-head">
+        <h2>The 35 talas</h2>
+        <p>There are seven suladi talas, and each can be set in five jatis. The jati sets the length of the laghu; drutam and anudrutam never change. The number in each cell is the count of aksharas in one avartanam. Highlighted cells are the forms in everyday use. Choose any cell to play it.</p>
+      </div>
+      <div class="table-wrap"><table id="tala35" class="tala35"></table></div>
+    </div>
+
+    <div class="block two-col">
+      <div>
+        <h2>Gati (nadai)</h2>
+        <p>The tala sets how many beats make a cycle; the gati sets how many pulses fill each beat. Chatusra gati, four to a beat, is the usual one. Tisra gati, three to a beat, has a lilting feel, while khanda (five) and misra (seven) appear in rhythmic passages and percussion. Seven talas in five jatis, each in five gatis, give the 175 talas of the system.</p>
+      </div>
+      <div>
+        <h2>Chapu talas</h2>
+        <p>Chapu talas come from folk and dance traditions and are counted in uneven groups rather than with laghu and drutam. Misra chapu (3 + 2 + 2, seven beats) and khanda chapu (2 + 3, five beats) are the most common, and many kritis are set in misra chapu.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -473,10 +564,12 @@
 <script src="js/config.js"></script>
 <script src="js/util.js"></script>
 <script src="js/theory.js"></script>
+<script src="js/tala.js"></script>
 <script src="js/sound.js"></script>
 <script src="js/pitch.js"></script>
 <script src="js/picker.js"></script>
 <script src="js/learn.js"></script>
+<script src="js/talas.js"></script>
 <script src="js/ear.js"></script>
 <script src="js/janya.js"></script>
 <script src="js/voice.js"></script>

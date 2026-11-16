@@ -4,7 +4,9 @@ const App = (() => {
   let currentTab = 'learn';
 
   function go(tab) {
+    if (tab === 'talas') { tab = 'learn'; TalaLearn.showSub('talas'); }
     if (!TABS.includes(tab)) tab = 'learn';
+    if (tab !== 'learn') TalaLearn.stop();
     currentTab = tab;
     TABS.forEach((t) => { $('#tab-' + t).hidden = t !== tab; });
     $$('.tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
@@ -43,6 +45,27 @@ const App = (() => {
     matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paintThemeBtn);
   }
 
+  // Sound settings: instrument for melodies (each choice plays a preview) and volume.
+  function initSoundMenu() {
+    const btn = $('#soundBtn'), panel = $('#soundPanel');
+    const render = () => {
+      $('#instrumentList').innerHTML = Sound.INSTRUMENTS.map((x) => `<button type="button" role="radio" aria-checked="${x.id === Sound.getInstrument()}" data-i="${x.id}">
+          <span class="inst-name">${x.name}</span><span class="inst-desc">${x.desc}</span></button>`).join('');
+    };
+    render();
+    const show = (on) => { panel.hidden = !on; btn.setAttribute('aria-expanded', String(on)); };
+    btn.addEventListener('click', (e) => { e.stopPropagation(); show(panel.hidden); });
+    $('#instrumentList').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-i]');
+      if (!b) return;
+      Sound.setInstrument(b.dataset.i);
+      render();
+      Sound.playSeq(['S', 'R2', 'G3', 'M1', 'P', { cents: 701.96, dur: 0.9 }], { dur: 0.32 });
+    });
+    document.addEventListener('click', (e) => { if (!panel.hidden && !e.target.closest('.sound-menu')) show(false); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) { show(false); btn.focus(); } });
+  }
+
   function init() {
     $('#shruti').innerHTML = Theory.KATTAI.map((k, i) => `<option value="${i}">${k.k} kattai · ${k.note}</option>`).join('');
     $('#shruti').addEventListener('change', (e) => setShruti(+e.target.value));
@@ -61,12 +84,14 @@ const App = (() => {
     window.addEventListener('hashchange', () => go(location.hash.slice(1)));
 
     Learn.init();
+    TalaLearn.init();
     Ear.init();
     Janya.init();
     Abhyasa.init();
     Voice.init();
     Quiz.init();
     initTheme();
+    initSoundMenu();
     if (window.RAGA_SADHANA_CONFIG?.chatEnabled) Chat.init();
     setShruti(store.get('shruti', 7));
     go(location.hash.slice(1) || store.get('tab', 'learn'));
