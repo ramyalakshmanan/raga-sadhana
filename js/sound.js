@@ -1,6 +1,6 @@
-// Audio: tambura drone and a simple sung-tone synth, both tuned to the chosen Sa.
+// Audio: tanpura drone and a plucked-string melody voice, both tuned to the chosen Sa.
 const Sound = (() => {
-  let ctx = null, master, droneBus, voiceBus, wave;
+  let ctx = null, master, droneBus, voiceBus;
   let sa = 196, vol = 0.7;
   let droneOn = false, droneTimer = null, nextT = 0, idx = 0;
   let current = null;
@@ -15,10 +15,7 @@ const Sound = (() => {
       master.connect(comp).connect(ctx.destination);
       droneBus = ctx.createGain(); droneBus.gain.value = 1.2; droneBus.connect(master);
       voiceBus = ctx.createGain(); voiceBus.gain.value = 0.9; voiceBus.connect(master);
-      // A reedy, voice-like harmonic spectrum.
-      const amps = [0, 1, 0.55, 0.42, 0.24, 0.18, 0.11, 0.08, 0.05, 0.035, 0.02, 0.015];
-      const real = new Float32Array(amps.length), imag = new Float32Array(amps);
-      wave = ctx.createPeriodicWave(real, imag);
+      setTimeout(prepareVoice, 30); // render the plucked-string voice in the background
     }
     if (ctx.state === 'suspended') ctx.resume();
     return ctx;
@@ -185,67 +182,144 @@ const Sound = (() => {
   }
   function stopDrone() { droneOn = false; clearInterval(droneTimer); }
 
-  // ---- melodic voice ----
+  // ---- melodic voice: a plucked string, in the tanpura / veena family ----
+  // A set of plucked notes is pre-rendered once, spaced every 300 cents from C2 to about E♭6.
+  // Each swara plays the nearest one, shifted to the exact pitch (at most 1.5 semitones,
+  // which keeps the timbre intact). The set does not depend on the shruti.
+  const VOICE_BASE = 65.406, VOICE_STEP = 300, VOICE_N = 18, VOICE_RING = 3.2;
+  let voiceBufs = null, voiceJob = null;
+
+  async function renderPluck(f0, seed) {
+    const sr = ctx.sampleRate;
+    const oc = new OfflineAudioContext(1, Math.floor(sr * VOICE_RING), sr);
+    const rnd = rng(seed);
+    const body = oc.createBiquadFilter(); body.type = 'peaking'; body.frequency.value = 200; body.Q.value = 1.1; body.gain.value = 3;
+    const body2 = oc.createBiquadFilter(); body2.type = 'peaking'; body2.frequency.value = 560; body2.Q.value = 1.3; body2.gain.value = 2;
+    const shelf = oc.createBiquadFilter(); shelf.type = 'highshelf'; shelf.frequency.value = 4500; shelf.gain.value = -5;
+    body.connect(body2).connect(shelf).connect(oc.destination);
+
+    const maxK = Math.min(40, Math.floor(7000 / f0));
+    const PTS = 500, dt = VOICE_RING / (PTS - 1);
+    const K0 = Math.min(maxK * 0.8, 18);
+    let norm = 0;
+    for (let k = 1; k <= maxK; k++) norm += 1 / Math.pow(k, 0.8);
+    for (let k = 1; k <= maxK; k++) {
+      const base = (1 / Math.pow(k, 0.8)) / norm;
+      const tau = (f0 < 150 ? 2.1 : 1.6) / (1 + 0.05 * k);
+      const rise = 0.002 + 0.0025 * k;      // a clear pluck, with the upper overtones blooming just after it
+      const curve = new Float32Array(PTS);
+      for (let i = 0; i < PTS; i++) {
+        const t = i * dt;
+        const c = (3 + (K0 - 3) * Math.exp(-t / 1.2)) * (1 - Math.exp(-t / 0.08));   // jawari band sweeping down
+        const w = 2 + 0.25 * c;
+        const boost = 1 + 2.5 * (1 - Math.exp(-t / 0.12)) * Math.exp(-t / 2.5) * Math.exp(-((k - c) ** 2) / (2 * w * w));
+        curve[i] = i === PTS - 1 ? 0 : base * Math.exp(-t / tau) * boost * (1 - Math.exp(-t / rise));
+      }
+      // Two slightly detuned vibration planes, placed either side of the true pitch so the note stays in tune.
+      const spread = 0.4 + rnd() * 0.6;
+      for (let pol = 0; pol < 2; pol++) {
+        const fk = k * f0 + (pol ? spread / 2 : -spread / 2);   // exact harmonics: this is a tuning reference
+        if (fk > sr / 2 - 500) continue;
+        const o = oc.createOscillator();
+        const ph = rnd() * 2 * Math.PI;
+        o.setPeriodicWave(oc.createPeriodicWave(new Float32Array([0, Math.sin(ph)]), new Float32Array([0, Math.cos(ph)])));
+        o.frequency.setValueAtTime(fk * Math.pow(2, 6 / 1200), 0);   // the string settles just after the pluck
+        o.frequency.exponentialRampToValueAtTime(fk, 0.15);
+        const g = oc.createGain();
+        g.gain.setValueCurveAtTime(pol ? curve.map((v) => v * 0.7) : curve, 0, VOICE_RING - 0.01);
+        o.connect(g).connect(body);
+        o.start(0); o.stop(VOICE_RING);
+      }
+    }
+    // Finger pluck
+    const nb = oc.createBuffer(1, Math.floor(sr * 0.03), sr), nd = nb.getChannelData(0);
+    for (let i = 0; i < nd.length; i++) nd[i] = (rnd() * 2 - 1) * Math.exp(-i / (sr * 0.004));
+    const ns = oc.createBufferSource(); ns.buffer = nb;
+    const lp = oc.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1800;
+    const ng = oc.createGain(); ng.gain.value = 0.04;
+    ns.connect(lp).connect(ng).connect(body); ns.start(0);
+
+    const buf = await oc.startRendering();
+    const d = buf.getChannelData(0);
+    let peak = 0;
+    for (const x of d) peak = Math.max(peak, Math.abs(x));
+    const scale = peak ? 0.5 / peak : 1;
+    for (let i = 0; i < d.length; i++) d[i] *= scale;
+    return buf;
+  }
+  function prepareVoice() {
+    if (voiceBufs) return Promise.resolve();
+    if (voiceJob) return voiceJob;
+    init();
+    voiceJob = Promise.all(Array.from({ length: VOICE_N }, (_, i) => renderPluck(VOICE_BASE * Math.pow(2, (i * VOICE_STEP) / 1200), 50 + i)))
+      .then((b) => { voiceBufs = b; })
+      .catch((e) => { console.error('Voice render failed', e); voiceJob = null; });
+    return voiceJob;
+  }
+  function nearestPluck(f) {
+    const i = Math.max(0, Math.min(VOICE_N - 1, Math.round((1200 * Math.log2(f / VOICE_BASE)) / VOICE_STEP)));
+    return { buf: voiceBufs[i], rate: f / (VOICE_BASE * Math.pow(2, (i * VOICE_STEP) / 1200)) };
+  }
+
   function stopVoice() { if (current) { current.stop(); current = null; } }
 
   // items: swara tokens, cents numbers, or {cents, dur} / {rest: true, dur}.
   // at: optional AudioContext time to start, so a sequence can line up with tala clicks.
+  // Each swara is a pluck; like a single string, a new pluck damps the previous note,
+  // and the last note before a rest or the end rings out.
   function playSeq(items, { dur = 0.5, onNote, at } = {}) {
     init();
     stopVoice();
-    const t0 = at != null ? at : ctx.currentTime + 0.06;
-    const osc = ctx.createOscillator();
-    osc.setPeriodicWave(wave);
-    const vib = ctx.createOscillator(), vibG = ctx.createGain();
-    vib.frequency.value = 5.3; vibG.gain.value = 6;
-    vib.connect(vibG); vibG.connect(osc.detune);
-    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3000;
-    const g = ctx.createGain(); g.gain.value = 0;
-    osc.connect(lp).connect(g).connect(voiceBus);
-
-    let t = t0, afterRest = true;
-    const times = [];
-    items.forEach((it) => {
-      const d = (it && it.dur) || dur;
-      if (it && it.rest) {
-        g.gain.setTargetAtTime(0, t, 0.03);
-        times.push(null); t += d; afterRest = true;
-        return;
-      }
-      const f = freq(centsOfItem(it));
-      if (afterRest) osc.frequency.setValueAtTime(f, t);
-      else osc.frequency.setTargetAtTime(f, t, 0.025); // a short glide between swaras
-      g.gain.setTargetAtTime(0.32, t, 0.02);
-      g.gain.setTargetAtTime(0.22, t + d * 0.45, 0.12);
-      g.gain.setTargetAtTime(0.1, t + d - 0.05, 0.02);
-      times.push(t); t += d; afterRest = false;
-    });
-    g.gain.setTargetAtTime(0, t - 0.04, 0.04);
-    osc.start(t0); vib.start(t0); osc.stop(t + 0.4); vib.stop(t + 0.4);
-
-    const now = ctx.currentTime;
-    const timers = times.map((tt, i) => (tt == null ? 0 : setTimeout(() => onNote && onNote(i), (tt - now) * 1000)));
-    let resolve;
+    let cancelled = false, endTimer = 0, resolve;
+    const voices = [], timers = [];
     const done = new Promise((r) => (resolve = r));
     const handle = {
       done,
       stop() {
+        cancelled = true;
         timers.forEach(clearTimeout); clearTimeout(endTimer);
-        try {
-          g.gain.cancelScheduledValues(ctx.currentTime);
-          g.gain.setTargetAtTime(0, ctx.currentTime, 0.02);
-          osc.stop(ctx.currentTime + 0.1); vib.stop(ctx.currentTime + 0.1);
-        } catch { /* already stopped */ }
+        const n = ctx.currentTime;
+        for (const { src, g } of voices) {
+          try { g.gain.cancelScheduledValues(n); g.gain.setTargetAtTime(0, n, 0.02); src.stop(n + 0.15); } catch { /* already stopped */ }
+        }
         onNote && onNote(-1);
         resolve(false);
       },
     };
-    const endTimer = setTimeout(() => {
-      onNote && onNote(-1);
-      if (current === handle) current = null;
-      resolve(true);
-    }, (t - now) * 1000 + 80);
     current = handle;
+
+    const go = () => {
+      if (cancelled) return;
+      const t0 = at != null ? Math.max(at, ctx.currentTime + 0.02) : ctx.currentTime + 0.05;
+      let t = t0;
+      const times = [];
+      items.forEach((it, i) => {
+        const d = (it && it.dur) || dur;
+        if (it && it.rest) { times.push(null); t += d; return; }
+        const { buf, rate } = nearestPluck(freq(centsOfItem(it)));
+        const src = ctx.createBufferSource();
+        src.buffer = buf; src.playbackRate.value = rate;
+        const g = ctx.createGain();
+        g.gain.value = 0.9;
+        src.connect(g).connect(voiceBus);
+        src.start(t);
+        const end = t + d, next = items[i + 1];
+        g.gain.setValueAtTime(0.9, end);
+        if (next && !next.rest) { g.gain.setTargetAtTime(0, end, 0.015); src.stop(end + 0.15); }
+        else { const tail = next ? Math.min(0.35, next.dur || dur) : 1.4; g.gain.setTargetAtTime(0, end, tail / 3); src.stop(end + tail + 0.2); }
+        voices.push({ src, g });
+        times.push(t);
+        t = end;
+      });
+      const now = ctx.currentTime;
+      times.forEach((tt, i) => { if (tt != null) timers.push(setTimeout(() => onNote && onNote(i), (tt - now) * 1000)); });
+      endTimer = setTimeout(() => {
+        onNote && onNote(-1);
+        if (current === handle) current = null;
+        resolve(true);
+      }, (t - now) * 1000 + 80);
+    };
+    if (voiceBufs) go(); else prepareVoice().then(go);
     return handle;
   }
 
@@ -268,7 +342,8 @@ const Sound = (() => {
   function stopClicks() { for (const o of clicks) { try { o.stop(); } catch { /* not started */ } } clicks.clear(); }
 
   return {
-    init, startDrone, stopDrone, playSeq, stopVoice, click, stopClicks,
+    init, startDrone, stopDrone, playSeq, stopVoice, click, stopClicks, prepareVoice,
+    _nearestPluck: (f) => nearestPluck(f),
     now: () => init().currentTime,
     isDroneOn: () => droneOn,
     tanpuraReady: () => prepareTanpura().then(() => tanBufs),

@@ -216,6 +216,7 @@ const Abhyasa = (() => {
     stop();
     if (mode === 'sing' && !(await Voice.ensureMic())) return;
     const ctx = Sound.init();
+    await Sound.prepareVoice();   // so the guide voice lines up with the clicks from the first note
     const bpm = +$('#abTempo').value, beat = 60 / bpm;
     const speeds = speed === 'all' ? [1, 2, 3] : [+speed];
     const perAv = sheet.perAv, baseUnits = sheet.tokens.length;
