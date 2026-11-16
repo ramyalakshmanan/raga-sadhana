@@ -9,9 +9,12 @@ Live site: https://ramyalakshmanan.github.io/raga-sadhana/
 - **Learn**: the twelve swarasthanas, a step-by-step decoder for all 72 melakartas (madhyamam → chakra → position), the full mela chart, and the katapayadi rule.
 - **Ear training**: name a raga from its arohanam/avarohanam (foundation, look-alike, janya and melakarta levels) or name a swara against Sa. Wrong answers show both ragas side by side with the differing swaras highlighted.
 - **Janya map**: 43 janya ragas shown against their parent mela's swaras, with a quiz for janya → parent and swaras → mela number.
+- **Quiz**: mixed sessions of 10 or 20 questions on scale → raga, listen → raga, melody → raga, janya → melakarta, melakarta → janya, melakarta names and numbers, and the swaras of a raga (its arohanam, its varjya swaras, which variant it uses). Every answer comes with an explanation, and you can practise just the questions you missed.
 - **Check my singing**: pick a raga, sing its arohanam/avarohanam or any of its swaras, and get a note-by-note report: the swara heard, cents sharp or flat, steadiness, and a verdict (accurate, close, off, wrong swara, not in raga, missed).
 - **Voice practice**: microphone pitch meter and trace over the raga's swaras, plus range finding with a shruti suggestion, shruti holding, swara ladders, octave jumps and free singing.
 - **Ask a doubt**: a chat on every page. Learners ask questions and Claude answers, using the app's raga data and what the learner is looking at (the selected raga, their latest singing report). Without an AI connection it still answers raga lookups from the app's data.
+
+Light and dark themes follow the system setting, with a toggle in the top bar.
 
 Tones use just-intonation ratios over the chosen shruti (kattai 1–7), with a synthesised tanpura drone.
 
@@ -61,6 +64,8 @@ js/learn.js           Learn tab
 js/ear.js             Ear training tab
 js/janya.js           Janya map tab
 js/voice.js           Voice practice tab
+js/quiz.js            Quiz tab
+js/picker.js          type-to-search raga picker
 js/chat.js            "Ask a doubt" chat (Claude via the Anthropic SDK)
 js/main.js            tabs, shruti and app wiring
 worker/chat-proxy.js  optional shared chat server (Cloudflare Worker)

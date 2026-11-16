@@ -37,7 +37,7 @@ const Chat = (() => {
     ...T.JANYAS.map((j) => `${j.name}, janya of ${j.parent} ${T.MELAS[j.parent - 1].name}: ${j.aro.map(tok).join(' ')} | ${j.ava.map(tok).join(' ')}`),
   ].join('\n');
 
-  const PAGE = { learn: 'Learn', ear: 'Ear training', janya: 'Janya map', voice: 'Voice practice' };
+  const PAGE = { learn: 'Learn', ear: 'Ear training', janya: 'Janya map', quiz: 'Quiz', voice: 'Voice practice' };
   function appContext() {
     const tab = App.currentTab();
     const lines = [`Page: ${PAGE[tab]}`];
@@ -46,7 +46,7 @@ const Chat = (() => {
     const ragaLine = (r) => `${r.name}${r.kind === 'mela' ? ` (melakarta ${r.n})` : ` (janya of ${r.parent} ${T.MELAS[r.parent - 1].name})`}: ${r.aro.map(tok).join(' ')} | ${r.ava.map(tok).join(' ')}`;
     if (tab === 'learn') lines.push(`Open in the decoder: ${ragaLine(T.MELAS[Learn.current() - 1])}`);
     if (tab === 'janya' && Janya.current()) lines.push(`Open in Janya map: ${ragaLine(Janya.current())}`);
-    if (tab === 'ear') lines.push('The learner is in an ear-training quiz. Do not name the raga or swara being played.');
+    if (tab === 'ear' || tab === 'quiz') lines.push('The learner is in a quiz. Do not give away answers; coach them to work it out.');
     if (tab === 'voice') {
       lines.push(`Raga selected for voice practice: ${ragaLine(Voice.raga())}`);
       if (Voice.lastReport()) lines.push(`Latest "Check my singing" report:\n${Voice.lastReport()}`);
