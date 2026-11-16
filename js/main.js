@@ -53,6 +53,19 @@ const App = (() => {
           <span class="inst-name">${x.name}</span><span class="inst-desc">${x.desc}</span></button>`).join('');
     };
     render();
+    // Swara numbering: changing it re-renders the whole app, so reload in place.
+    const SCHEMES = [
+      { id: 'practical', name: 'Two forms (G1 G2, N1 N2)', desc: 'Sadharana G1, antara G2, kaisiki N1, kakali N2' },
+      { id: 'melakarta', name: 'Three forms (G1–G3, N1–N3)', desc: 'As in the 72-melakarta system' },
+    ];
+    $('#numberingList').innerHTML = SCHEMES.map((x) => `<button type="button" role="radio" aria-checked="${x.id === Theory.getNumbering()}" data-n="${x.id}">
+        <span class="inst-name">${x.name}</span><span class="inst-desc">${x.desc}</span></button>`).join('');
+    $('#numberingList').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-n]');
+      if (!b || b.dataset.n === Theory.getNumbering()) return;
+      Theory.setNumbering(b.dataset.n);
+      location.reload();
+    });
     const show = (on) => { panel.hidden = !on; btn.setAttribute('aria-expanded', String(on)); };
     btn.addEventListener('click', (e) => { e.stopPropagation(); show(panel.hidden); });
     $('#instrumentList').addEventListener('click', (e) => {

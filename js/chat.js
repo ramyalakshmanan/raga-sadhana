@@ -15,13 +15,15 @@ const Chat = (() => {
   const mode = () => (cfg.chatProxyUrl ? 'proxy' : apiKey() ? 'key' : 'offline');
 
   // ---------- grounding ----------
-  const tok = (s) => s.replace("'", '′');
+  const tok = (s) => T.tokText(s);
   const SYSTEM = [
     `You are the music teacher built into Raga Sadhana, a web app for learning Carnatic music. Learners range from beginners to intermediate students. They ask about theory, ragas, ear training and their own singing.`,
     ``,
     `How to answer:`,
     `- Be clear, warm and concise. Most answers fit in a few short paragraphs or a short list; go longer only when the learner asks for depth.`,
-    `- Use the app's swara notation: S R1 R2 R3 G1 G2 G3 M1 M2 P D1 D2 D3 N1 N2 N3. Write tara sthayi with a prime (S′) and mandra sthayi with a trailing dot (P.).`,
+    T.getNumbering() === 'practical'
+      ? `- Use the app's swara notation: R1 R2 R3, G1 = sadharana and G2 = antara gandharam, M1 M2, D1 D2 D3, N1 = kaisiki and N2 = kakali nishadam. The rare shuddha gandharam and shuddha nishadam are written Gs and Ns. Use this numbering in every answer, including for ragas not listed below. Tara sthayi has a dot above (Ṡ) and mandra a dot below (P̣).`
+      : `- Use the app's swara notation: S R1 R2 R3 G1 G2 G3 M1 M2 P D1 D2 D3 N1 N2 N3 (three forms each, as in the melakarta system). Tara sthayi has a dot above (Ṡ) and mandra a dot below (P̣).`,
     `- Explain any term a beginner may not know (gamaka, sthayi, varjya, vakra, janya and so on) the first time you use it.`,
     `- For the ragas listed below, the listed arohanam, avarohanam and parent are what the app teaches; stay consistent with them. For other ragas, answer from your own knowledge and say where schools or books differ (alternate arohanams, parent assignments, bhashanga usage). Do not invent composers, kritis or historical facts; if you are not sure, say so.`,
     `- Singing advice should be practical and safe. If a learner describes pain, hoarseness that lasts, or strain, suggest rest and a teacher or voice professional.`,
@@ -31,7 +33,7 @@ const Chat = (() => {
     `- Format with plain Markdown: short paragraphs, **bold** for key terms, and bullet or numbered lists. No tables.`,
     ``,
     `THE 72 MELAKARTAS (number, name, swaras):`,
-    ...T.MELAS.map((m) => `${m.n} ${m.name}${m.alias ? ` (${m.alias})` : ''}: ${m.swaras.join(' ')}`),
+    ...T.MELAS.map((m) => `${m.n} ${m.name}${m.alias ? ` (${m.alias})` : ''}: ${m.swaras.map(T.label).join(' ')}`),
     ``,
     `JANYA RAGAS IN THE APP (name, parent mela: arohanam | avarohanam):`,
     ...T.JANYAS.map((j) => `${j.name}, janya of ${j.parent} ${T.MELAS[j.parent - 1].name}: ${j.aro.map(tok).join(' ')} | ${j.ava.map(tok).join(' ')}`),

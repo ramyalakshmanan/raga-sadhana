@@ -188,15 +188,31 @@ const Theory = (() => {
     return POSITIONS[st].names[0];
   }
 
+  // ---- how swara names are written ----
+  // Internally every swara keeps its melakarta name (G1 G2 G3, N1 N2 N3). What learners see
+  // depends on the numbering scheme:
+  //   practical (default): the two forms used in practice are numbered 1 and 2:
+  //     sadharana gandharam G1, antara gandharam G2, kaisiki nishadam N1, kakali nishadam N2.
+  //     The rare shuddha gandharam and shuddha nishadam (needed by some melakartas) show as Gs, Ns.
+  //   melakarta: three forms each, G1–G3 and N1–N3, as in the 72-mela system.
+  const PRACTICAL = { G1: 's', G2: '1', G3: '2', N1: 's', N2: '1', N3: '2' };
+  let scheme = 'practical';
+  try { const v = JSON.parse(localStorage.getItem('rs.numbering')); if (v === 'practical' || v === 'melakarta') scheme = v; } catch { /* default */ }
+  const numOf = (name) => (scheme === 'practical' && PRACTICAL[name] ? PRACTICAL[name] : name.slice(1));
+  const label = (name) => name[0] + numOf(name);   // display name without octave marks, e.g. "N2"
+
   function swaraHTML(tok, cls = '') {
     const t = typeof tok === 'string' ? parseToken(tok) : tok;
-    const dot = t.oct > 0 ? '̇'.repeat(t.oct) : t.oct < 0 ? '̣'.repeat(-t.oct) : '';
-    return `<span class="sw ${cls}">${t.letter}${dot}${t.num ? `<sub>${t.num}</sub>` : ''}</span>`;
+    const dot = t.oct > 0 ? '\u0307'.repeat(t.oct) : t.oct < 0 ? '\u0323'.repeat(-t.oct) : '';
+    const num = t.num ? numOf(t.name) : '';
+    return `<span class="sw ${cls}">${t.letter}${dot}${num ? `<sub>${num}</sub>` : ''}</span>`;
   }
   function swaraText(name, oct = 0) {
-    const dot = oct > 0 ? '̇'.repeat(oct) : oct < 0 ? '̣'.repeat(-oct) : '';
-    return name[0] + dot + name.slice(1);
+    const dot = oct > 0 ? '\u0307'.repeat(oct) : oct < 0 ? '\u0323'.repeat(-oct) : '';
+    return name[0] + dot + numOf(name);
   }
+  // A swara token ("N3", "S'", "P.") as display text.
+  const tokText = (t) => { const p = parseToken(t); return swaraText(p.name, p.oct); };
   function seqHTML(toks, mark) {
     return `<span class="seq">${toks.map((x) => swaraHTML(x, mark && mark(parseToken(x)) ? 'diff' : '')).join('')}</span>`;
   }
@@ -213,6 +229,12 @@ const Theory = (() => {
     RATIOS, CENTS, SEMI, POSITIONS, FULL_NAME, CHAKRAS, RG, DN, PA, KATTAI,
     MELAS, JANYAS, ALL, byId, find,
     parseToken, tokObj, centsOf, swaraSet, sortedNames, classify, consistentMelas, varjya,
-    nearest, nameFor, swaraHTML, swaraText, seqHTML, melaLabel, derivation,
+    nearest, nameFor, swaraHTML, swaraText, tokText, label, seqHTML, melaLabel, derivation,
+    getNumbering: () => scheme,
+    setNumbering(v) {
+      if (v !== 'practical' && v !== 'melakarta') return;
+      scheme = v;
+      try { localStorage.setItem('rs.numbering', JSON.stringify(v)); } catch { /* not saved */ }
+    },
   };
 })();

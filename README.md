@@ -16,7 +16,7 @@ Live site: https://ramyalakshmanan.github.io/raga-sadhana/
 - **Voice practice**: microphone pitch meter and trace over the raga's swaras, plus range finding with a shruti suggestion, shruti holding, swara ladders, octave jumps and free singing.
 - **Ask a doubt**: a chat on every page. Learners ask questions and Claude answers, using the app's raga data and what the learner is looking at (the selected raga, their latest singing report). Without an AI connection it still answers raga lookups from the app's data.
 
-Light and dark themes follow the system setting, with a toggle in the top bar. Melodies can play on veena, violin, flute or voice (sound settings in the top bar).
+Swaras use the two-form numbering by default (sadharana G1, antara G2, kaisiki N1, kakali N2; the rare shuddha gandharam and nishadam show as Gs and Ns); the settings panel switches to the three-form melakarta numbering. Light and dark themes follow the system setting, with a toggle in the top bar. Melodies can play on veena, violin, flute or voice (sound settings in the top bar).
 
 Tones use just-intonation ratios over the chosen shruti (kattai 1–7), with a synthesised tanpura drone.
 

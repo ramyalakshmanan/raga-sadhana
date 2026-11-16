@@ -91,7 +91,7 @@ const Quiz = (() => {
       const r = fresh(pool());
       const opts = similar(r, pool().length >= 8 ? pool() : T.ALL, 3, (c) => seqKey(c) !== seqKey(r));
       return {
-        subject: r, summary: `Scale shown: ${r.aro.join(' ')} / ${r.ava.join(' ')}`,
+        subject: r, summary: `Scale shown: ${r.aro.map(T.tokText).join(' ')} / ${r.ava.map(T.tokText).join(' ')}`,
         prompt: `<p>Which raga has this arohanam and avarohanam?</p>${scaleHTML(r)}`,
         options: shuffle([ragaOpt(r, true), ...opts.map((o) => ragaOpt(o, false))]),
         explain: `<b>${ragaName(r)}</b>, ${where(r)}. ${T.classify(r).type}${T.classify(r).vakra ? ', vakra' : ''}.`,

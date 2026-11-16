@@ -60,12 +60,14 @@
         <span>Tanpura</span>
       </button>
       <div class="sound-menu">
-        <button id="soundBtn" class="btn icon-btn" type="button" aria-expanded="false" aria-controls="soundPanel" aria-label="Sound settings" title="Sound settings">
+        <button id="soundBtn" class="btn icon-btn" type="button" aria-expanded="false" aria-controls="soundPanel" aria-label="Settings" title="Settings">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg>
         </button>
         <div id="soundPanel" class="sound-panel" hidden>
           <p class="label">Instrument for melodies</p>
           <div id="instrumentList" class="instrument-list" role="radiogroup" aria-label="Instrument for melodies"></div>
+          <p class="label">Swara numbering</p>
+          <div id="numberingList" class="instrument-list" role="radiogroup" aria-label="Swara numbering"></div>
           <label for="vol" class="label">Volume</label>
           <input id="vol" type="range" min="0" max="1" step="0.01" value="0.7">
         </div>
@@ -94,7 +96,7 @@
   <div class="block">
     <div class="block-head">
       <h2>The twelve swarasthanas</h2>
-      <p>An octave holds twelve positions. The seven swaras S R G M P D N occupy them in different combinations, and four positions carry two names: R₂ is the same pitch as G₁, R₃ as G₂, D₂ as N₁, D₃ as N₂. Tap a position to hear it.</p>
+      <p>An octave holds twelve positions. The seven swaras S R G M P D N occupy them in different combinations, and four positions carry two names: <span id="sharedNames"></span>. Tap a position to hear it.</p>
     </div>
     <div id="strip" class="strip"></div>
     <div class="row"><button id="playAll12" class="btn" type="button">Play all twelve</button></div>

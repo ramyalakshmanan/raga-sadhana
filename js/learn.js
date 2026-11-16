@@ -107,6 +107,10 @@ const Learn = (() => {
   }
 
   function init() {
+    // The pairs of names that share a pitch, written in the current numbering.
+    const pair = (a, b) => `${T.swaraHTML(a)} is the same pitch as ${T.swaraHTML(b)}`;
+    $('#sharedNames').innerHTML = [pair('R2', 'G1'), pair('R3', 'G2'), pair('D2', 'N1'), pair('D3', 'N2')].join(', ')
+      + (T.getNumbering() === 'practical' ? ' (G<sub>s</sub> and N<sub>s</sub> are the rare shuddha gandharam and shuddha nishadam)' : '');
     const strip = $('#strip');
     strip.innerHTML = stripHTML(null);
     wireStrip(strip);

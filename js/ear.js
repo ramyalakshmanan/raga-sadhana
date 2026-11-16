@@ -114,7 +114,7 @@ const Ear = (() => {
     const choice = q.options[i];
     const ok = choice === q.answer;
     stats.n++; if (ok) { stats.ok++; stats.streak++; } else stats.streak = 0;
-    const key = q.kind === 'raga' ? q.answer.name : 'Swara ' + T.POSITIONS[q.answer].names.join('/');
+    const key = q.kind === 'raga' ? q.answer.name : 'Swara ' + T.POSITIONS[q.answer].names.map(T.label).join('/');
     if (!ok) stats.miss[key] = (stats.miss[key] || 0) + 1;
     store.set('ear', stats);
 
