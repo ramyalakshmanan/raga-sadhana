@@ -317,7 +317,8 @@
 
   <div class="block">
     <div class="seg ex-tabs" id="exTabs" role="group" aria-label="Exercise">
-      <button type="button" data-v="check" aria-pressed="true">Check my singing</button>
+      <button type="button" data-v="abhyasa" aria-pressed="true">Varisai &amp; alankaram</button>
+      <button type="button" data-v="check" aria-pressed="false">Check my singing</button>
       <button type="button" data-v="range" aria-pressed="false">Find my range</button>
       <button type="button" data-v="hold" aria-pressed="false">Hold the shruti</button>
       <button type="button" data-v="ladder" aria-pressed="false">Swara ladder</button>
@@ -325,7 +326,51 @@
       <button type="button" data-v="free" aria-pressed="false">Free singing</button>
     </div>
 
-    <div class="ex" data-ex="check">
+    <div class="ex" data-ex="abhyasa">
+      <p>Practise the raga the way it is taught: sarali, janta and dhatu varisai, sthayi exercises and alankarams, in three speeds, on swaras or in aakaaram. Sing along and every swara is checked for its sthanam, so you can see which swaras and which jumps between them slip. Start the tanpura first.</p>
+      <div id="abNotice" class="callout" hidden></div>
+      <div class="ab-controls">
+        <div class="ab-field">
+          <label for="abExercise" class="label">Exercise</label>
+          <select id="abExercise"></select>
+        </div>
+        <div class="ab-field">
+          <span class="label">Speed (kalam)</span>
+          <div class="seg" id="abSpeed" role="group" aria-label="Speed">
+            <button type="button" data-v="1" aria-pressed="true">1st</button>
+            <button type="button" data-v="2" aria-pressed="false">2nd</button>
+            <button type="button" data-v="3" aria-pressed="false">3rd</button>
+            <button type="button" data-v="all" aria-pressed="false">All three</button>
+          </div>
+        </div>
+        <div class="ab-field">
+          <label for="abTempo" class="label">Tempo · <span id="abTempoVal" class="mono">60</span> beats a minute</label>
+          <input id="abTempo" type="range" min="40" max="120" step="2" value="60">
+        </div>
+        <div class="ab-field">
+          <span class="label">Sing on</span>
+          <div class="seg" id="abVoice" role="group" aria-label="Sing on">
+            <button type="button" data-v="swaras" aria-pressed="true">Swaras</button>
+            <button type="button" data-v="aa" aria-pressed="false">Aakaaram</button>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <label class="check"><input id="abGuide" type="checkbox" checked> Guide voice while singing</label>
+        <label class="check"><input id="abClick" type="checkbox" checked> Tala clicks</label>
+      </div>
+      <div class="row">
+        <button id="abListen" class="btn" type="button">Listen</button>
+        <button id="abSing" class="btn primary" type="button">Sing along</button>
+        <button id="abStop" class="btn" type="button" hidden>Stop</button>
+        <span id="abStatus" class="status"></span>
+      </div>
+      <div id="abTala" class="tala"></div>
+      <div id="abSheet" class="sheet"></div>
+      <div id="abResult"></div>
+    </div>
+
+    <div class="ex" data-ex="check" hidden>
       <p>Choose a raga above, press Start and sing. When you stop (or after 4 seconds of silence), you get a report on every swara you sang: which swara the app heard, how many cents sharp or flat you were, and how steadily you held it. Start the tambura first so you have Sa to sing against.</p>
       <div class="row">
         <label for="checkMode" class="sr-only">What to sing</label>
@@ -436,6 +481,7 @@
 <script src="js/janya.js"></script>
 <script src="js/voice.js"></script>
 <script src="js/quiz.js"></script>
+<script src="js/abhyasa.js"></script>
 <script src="js/chat.js"></script>
 <script src="js/main.js"></script>
 </body>

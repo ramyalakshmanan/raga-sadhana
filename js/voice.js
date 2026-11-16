@@ -8,7 +8,7 @@ const Voice = (() => {
 
   let raga = null, stSet = new Set();
   let running = false, raf = 0, lastT = 0;
-  let exercise = 'check';
+  let exercise = 'abhyasa';
   let ragaPicker = null;
   const hist = [], trace = [];
   let colors = {}, colorsAt = 0;
@@ -76,6 +76,7 @@ const Voice = (() => {
     trace.push({ t: now, c, s: cl ? cl.state : null });
     while (trace.length && now - trace[0].t > WINDOW) trace.shift();
 
+    Abhyasa.onFrame(c, now);
     check.onFrame(c, now);
     rangeEx.onFrame(c, dt, now);
     hold.onFrame(c, dt, now);
@@ -123,7 +124,7 @@ const Voice = (() => {
     colorsAt = now;
   }
   function currentTarget() {
-    return hold.target() ?? ladder.target() ?? jumps.target();
+    return Abhyasa.target() ?? hold.target() ?? ladder.target() ?? jumps.target();
   }
   function draw(now) {
     const cv = $('#trace');
@@ -734,10 +735,12 @@ const Voice = (() => {
     ladder.preview(); jumps.preview();
     if (check.rec) check.stop();
     check.renderExpected();
+    Abhyasa.onRaga(raga);
     free.reset();
     draw(performance.now());
   }
   function setExercise(v) {
+    if (v !== 'abhyasa') Abhyasa.stop();
     exercise = v;
     $$('#tab-voice .ex').forEach((e) => (e.hidden = e.dataset.ex !== v));
   }
@@ -782,13 +785,13 @@ const Voice = (() => {
     $('#jumpSet').addEventListener('change', () => { jumps.stop(); jumps.preview(); });
     $('#freeReset').addEventListener('click', () => free.reset());
     window.addEventListener('resize', () => draw(performance.now()));
-    setExercise('check');
+    setExercise('abhyasa');
     setRaga(store.get('voiceRaga', 'm15'));
     renderRange();
   }
 
   return {
-    init, setRaga,
+    init, setRaga, ensureMic,
     raga: () => raga,
     lastReport: () => check.summary || "",
     onShow() { requestAnimationFrame(() => draw(performance.now())); },

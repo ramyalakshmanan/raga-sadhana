@@ -375,6 +375,40 @@ input[type="range"] { accent-color: var(--accent); }
 .quiz-big { font-family: var(--font-mono); font-size: 4rem; font-weight: 500; letter-spacing: -0.05em; line-height: 1; color: var(--accent); }
 .quiz-big span { font-size: 1.6rem; color: var(--muted); letter-spacing: -0.02em; }
 
+/* Varisai & alankaram practice */
+.ab-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px 20px; align-items: end; }
+.ab-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ab-field select { width: 100%; }
+.ab-field .seg { align-self: flex-start; }
+.tala { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.tala-beats { display: flex; gap: 6px; flex-wrap: wrap; }
+.beat {
+  min-width: 42px; height: 30px; padding: 0 8px; border-radius: 8px; display: grid; place-items: center;
+  font-size: .72rem; font-weight: 600; color: var(--muted); background: var(--surface-2); transition: background .08s, color .08s;
+}
+.beat.clap { color: var(--ink-2); }
+.beat.gap { margin-right: 10px; }
+.beat.now { background: var(--accent); color: var(--accent-ink); }
+.sheet {
+  display: flex; flex-direction: column; gap: 4px; max-height: 360px; overflow: auto; padding: 14px 16px;
+  background: var(--surface-2); border-radius: 14px; font-size: 1.08rem;
+}
+.sheet-line { display: flex; align-items: center; gap: 2px; white-space: nowrap; }
+.cell { min-width: 2.1em; padding: 3px 4px; text-align: center; border-radius: 6px; transition: background .08s; }
+.cell.karvai { color: var(--muted); }
+.cell.now { background: var(--accent); color: var(--accent-ink); }
+.cell.ok { background: var(--good-soft); }
+.cell.meh { background: var(--warn-soft); }
+.cell.miss { background: var(--bad-soft); }
+.cell.now.ok, .cell.now.meh, .cell.now.miss { background: var(--accent); }
+.bar { color: var(--muted); padding: 0 6px; font-weight: 300; }
+.sheet.aakaram .cell:not(.karvai) .sw { opacity: .45; }
+.sheet.aakaram::before { content: 'Sing every swara on “aa”. The notation is there for reference.'; font-size: .8rem; color: var(--muted); margin-bottom: 6px; white-space: normal; }
+.ab-report { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.ab-report > div { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.stat-val.small-val { font-size: 1.05rem; letter-spacing: -0.01em; padding-top: 8px; }
+@media (max-width: 760px) { .ab-report { grid-template-columns: 1fr; } }
+
 /* Theme toggle */
 .icon-btn { width: 36px; height: 36px; padding: 0; border-radius: 999px; }
 .icon-btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }

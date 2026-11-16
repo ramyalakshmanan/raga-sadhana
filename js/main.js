@@ -63,6 +63,7 @@ const App = (() => {
     Learn.init();
     Ear.init();
     Janya.init();
+    Abhyasa.init();
     Voice.init();
     Quiz.init();
     initTheme();

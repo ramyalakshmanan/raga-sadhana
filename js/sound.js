@@ -189,10 +189,11 @@ const Sound = (() => {
   function stopVoice() { if (current) { current.stop(); current = null; } }
 
   // items: swara tokens, cents numbers, or {cents, dur} / {rest: true, dur}.
-  function playSeq(items, { dur = 0.5, onNote } = {}) {
+  // at: optional AudioContext time to start, so a sequence can line up with tala clicks.
+  function playSeq(items, { dur = 0.5, onNote, at } = {}) {
     init();
     stopVoice();
-    const t0 = ctx.currentTime + 0.06;
+    const t0 = at != null ? at : ctx.currentTime + 0.06;
     const osc = ctx.createOscillator();
     osc.setPeriodicWave(wave);
     const vib = ctx.createOscillator(), vibG = ctx.createGain();
@@ -248,8 +249,27 @@ const Sound = (() => {
     return handle;
   }
 
+  // Tala click at an AudioContext time. level: 'sam' (first beat), 'clap', 'soft' (finger count / wave).
+  const clicks = new Set();
+  function click(at, level = 'clap') {
+    init();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'triangle';
+    o.frequency.value = level === 'sam' ? 1760 : level === 'clap' ? 1320 : 990;
+    const peak = level === 'sam' ? 0.5 : level === 'clap' ? 0.32 : 0.16;
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(peak, at + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.06);
+    o.connect(g).connect(master);
+    o.start(at); o.stop(at + 0.08);
+    clicks.add(o);
+    o.onended = () => clicks.delete(o);
+  }
+  function stopClicks() { for (const o of clicks) { try { o.stop(); } catch { /* not started */ } } clicks.clear(); }
+
   return {
-    init, startDrone, stopDrone, playSeq, stopVoice,
+    init, startDrone, stopDrone, playSeq, stopVoice, click, stopClicks,
+    now: () => init().currentTime,
     isDroneOn: () => droneOn,
     tanpuraReady: () => prepareTanpura().then(() => tanBufs),
     setSa(f) { sa = f; if (droneOn) prepareTanpura(); },
