@@ -99,7 +99,29 @@ const Learn = (() => {
         <span class="dz-big">${sw(D, N)}</span></button>`).join('');
     const kind = (name) => (name[0] === 'M' ? 'm' : 'RG'.includes(name[0]) ? 'c' : 'DN'.includes(name[0]) ? 'p' : 'f');
     const result = m.aro.map((t) => { const x = T.parseToken(t); return `<span class="dz-sw k-${kind(x.name)}">${T.swaraHTML(x.name)}${x.oct ? '<span class="dz-dot">·</span>' : ''}</span>`; }).join('');
-    return `<div class="decode">
+    // Beginner view: one scale, Sa and Pa fixed, three slots that change.
+    const go = (hh, cc, pp) => hh * 36 + cc * 6 + pp + 1;
+    const slot = (k, label, names, i, of, prev, next) => `<div class="bslot k-${k}">
+        <div class="bslot-box">
+          <button type="button" class="bslot-arrow" data-go="${prev}" aria-label="Previous ${label} choice">‹</button>
+          <span class="bslot-sw">${sw(...names)}</span>
+          <button type="button" class="bslot-arrow" data-go="${next}" aria-label="Next ${label} choice">›</button>
+        </div>
+        <span class="bslot-cap"><b>${label}</b> · choice ${i + 1} of ${of}</span></div>`;
+    const fixed = (html) => `<div class="bslot fixed"><div class="bslot-box"><span class="bslot-sw">${html}</span></div><span class="bslot-cap">fixed</span></div>`;
+    const [R, G] = T.RG[c], [D, N] = T.DN[p];
+    const build = `<div class="build">
+      <div class="build-scale">
+        ${fixed('S')}
+        ${slot('c', 'Ri &amp; Ga', [R, G], c, 6, go(h, (c + 5) % 6, p), go(h, (c + 1) % 6, p))}
+        ${slot('m', 'Ma', [m.madhyama], h, 2, go(1 - h, c, p), go(1 - h, c, p))}
+        ${fixed('P')}
+        ${slot('p', 'Dha &amp; Ni', [D, N], p, 6, go(h, c, (p + 5) % 6), go(h, c, (p + 1) % 6))}
+        ${fixed('Ṡ')}
+      </div>
+      <p class="build-count"><span class="k-c">6</span> × <span class="k-m">2</span> × <span class="k-p">6</span> = <b>72</b> melakartas. Use the arrows to change one choice and see which melakarta you get.</p>
+    </div>`;
+    return `${build}<details class="build-more"${store.get('decodeMore', false) ? ' open' : ''}><summary>How the number is worked out</summary><div class="decode">
       <div class="dz-row k-m"><div class="dz-key"><span class="dz-step">1</span><b>Madhyamam</b><span>which half</span></div><div class="dz-tiles two">${half}</div></div>
       <div class="dz-row k-c"><div class="dz-key"><span class="dz-step">2</span><b>Chakra</b><span>fixes R and G</span></div><div class="dz-tiles">${chakras}</div></div>
       <div class="dz-row k-p"><div class="dz-key"><span class="dz-step">3</span><b>Position</b><span>fixes D and N</span></div><div class="dz-tiles">${poss}</div></div>
@@ -108,7 +130,7 @@ const Learn = (() => {
           <div class="dz-cap">half start + six per earlier chakra + position</div></div>
         <div class="dz-result">${result}</div>
       </div>
-    </div>`;
+    </div></details>`;
   }
 
   function renderChart() {
@@ -157,6 +179,8 @@ const Learn = (() => {
     $('#melaCard').addEventListener('click', (e) => {
       const go = e.target.closest('[data-go]');
       if (go) { renderMela(+go.dataset.go); return; }
+      const sum = e.target.closest('.build-more summary');
+      if (sum) setTimeout(() => store.set('decodeMore', sum.parentElement.open), 0);
       const m = T.MELAS[current - 1];
       const pb = e.target.closest('[data-play]');
       if (pb) playRaga(m, pb.dataset.play, 0.5, $('#melaStrip'));
