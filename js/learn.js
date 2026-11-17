@@ -4,9 +4,6 @@ const Learn = (() => {
   let current = 15;
   let melaPicker = null;
 
-  // The name each position goes by in everyday teaching (shown as
-  // S R1 R2 G1 G2 M1 M2 P D1 D2 N1 N2 in two-form numbering).
-  const COMMON = ['S', 'R1', 'R2', 'G2', 'G3', 'M1', 'M2', 'P', 'D1', 'D2', 'N2', 'N3'];
 
   // active: Map of semitone -> the name a melakarta uses there, or null.
   // A position shows the raga's own name for it when it has one (e.g. R3 in
@@ -20,7 +17,7 @@ const Learn = (() => {
         <span class="pos-full">${upper ? 'Upper shadjam' : T.FULL_NAME[n]}</span>
         <span class="pos-c">${upper ? 1200 : Math.round(T.CENTS[st])}¢</span></button>`;
     };
-    return COMMON.map((n, st) => cell(st, n)).join('') + cell(0, 'S', true);
+    return T.COMMON.map((n, st) => cell(st, n)).join('') + cell(0, 'S', true);
   }
   function wireStrip(el) {
     el.addEventListener('click', (e) => {

@@ -63,12 +63,12 @@ const Ear = (() => {
   }
 
   function swaraOptLabel(st) {
-    const p = T.POSITIONS[st];
     if (level === 'basic7') {
       const n = { 0: 'S', 2: 'R2', 4: 'G3', 5: 'M1', 7: 'P', 9: 'D2', 11: 'N3' }[st];
       return { main: T.swaraHTML(n), sub: T.FULL_NAME[n] };
     }
-    return { main: p.names.map((n) => T.swaraHTML(n)).join(' / '), sub: p.full.join(' / ') };
+    const n = T.commonName(st);
+    return { main: T.swaraHTML(n), sub: T.FULL_NAME[n] };
   }
 
   function render() {
@@ -115,7 +115,7 @@ const Ear = (() => {
     const choice = q.options[i];
     const ok = choice === q.answer;
     stats.n++; if (ok) { stats.ok++; stats.streak++; } else stats.streak = 0;
-    const key = q.kind === 'raga' ? q.answer.name : 'Swara ' + T.POSITIONS[q.answer].names.map(T.label).join('/');
+    const key = q.kind === 'raga' ? q.answer.name : 'Swara ' + T.label(T.commonName(q.answer));
     if (!ok) stats.miss[key] = (stats.miss[key] || 0) + 1;
     store.set('ear', stats);
 
@@ -151,9 +151,9 @@ const Ear = (() => {
         if (o) App.showRaga(o.dataset.open);
       };
     } else {
-      const st = q.answer, p = T.POSITIONS[st];
+      const st = q.answer, nm = T.commonName(st);
       fb.innerHTML = `
-        <div class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct' : 'Not quite'}: it was ${p.names.map((n) => T.swaraHTML(n)).join(' / ')}, ${p.full.join(' / ')}.</div>
+        <div class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct' : 'Not quite'}: it was ${T.swaraHTML(nm)}, ${T.FULL_NAME[nm].toLowerCase()}.</div>
         <p class="small">${Math.round(T.CENTS[st])} cents above Sa (ratio ${ratioText(st)}).</p>
         <div class="row">
           <button class="btn" type="button" data-sw="${st}">Sa then this swara</button>

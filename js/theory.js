@@ -190,10 +190,15 @@ const Theory = (() => {
     return { st, oct: o, dev: bd, target: CENTS[st] + 1200 * o };
   }
 
-  // Name to use for a semitone within a raga (R2 vs G1 etc.).
+  // The one name each position goes by in everyday teaching. In two-form
+  // numbering this reads S R1 R2 G1 G2 M1 M2 P D1 D2 N1 N2.
+  const COMMON = ['S', 'R1', 'R2', 'G2', 'G3', 'M1', 'M2', 'P', 'D1', 'D2', 'N2', 'N3'];
+  const commonName = (st) => COMMON[((st % 12) + 12) % 12];
+
+  // Name to use for a semitone within a raga (R2 vs G1 etc.); outside a raga, the everyday name.
   function nameFor(r, st) {
     if (r) for (const n of swaraSet(r)) if (SEMI[n] === st) return n;
-    return POSITIONS[st].names[0];
+    return commonName(st);
   }
 
   // ---- how swara names are written ----
@@ -237,7 +242,7 @@ const Theory = (() => {
     RATIOS, CENTS, SEMI, POSITIONS, FULL_NAME, CHAKRAS, RG, DN, PA, KATTAI,
     MELAS, JANYAS, ALL, byId, find,
     parseToken, tokObj, centsOf, swaraSet, ownSwaras, sortedNames, classify, consistentMelas, varjya,
-    nearest, nameFor, swaraHTML, swaraText, tokText, label, seqHTML, melaLabel, derivation,
+    nearest, nameFor, commonName, COMMON, swaraHTML, swaraText, tokText, label, seqHTML, melaLabel, derivation,
     getNumbering: () => scheme,
     setNumbering(v) {
       if (v !== 'practical' && v !== 'melakarta') return;

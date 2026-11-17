@@ -236,7 +236,7 @@ const Voice = (() => {
   };
   function noteLabel(hz) {
     const c = hzToCents(hz), n = T.nearest(c);
-    return `${T.swaraHTML(T.tokObj(T.POSITIONS[n.st].names[0], n.oct))} <span class="muted small">(${octName(n.oct)}, ${hz.toFixed(0)} Hz)</span>`;
+    return `${T.swaraHTML(T.tokObj(T.commonName(n.st), n.oct))} <span class="muted small">(${octName(n.oct)}, ${hz.toFixed(0)} Hz)</span>`;
   }
   function renderRange() {
     const el = $('#rangeResult');
@@ -536,7 +536,7 @@ const Voice = (() => {
   };
   function heardHTML(c) {
     const n = T.nearest(c);
-    const names = stSet.has(n.st) ? [T.nameFor(raga, n.st)] : T.POSITIONS[n.st].names;
+    const names = [stSet.has(n.st) ? T.nameFor(raga, n.st) : T.commonName(n.st)];
     return names.map((x) => T.swaraHTML(T.tokObj(x, n.oct))).join('/');
   }
   // Judge one sung pitch against the swara it should have been.
@@ -708,7 +708,7 @@ const Voice = (() => {
       if (cl.state === 'on') this.on += dt;
       else if (cl.state === 'off') {
         this.off += dt;
-        const k = T.POSITIONS[cl.near.st].names[0];
+        const k = T.commonName(cl.near.st);
         this.outside[k] = (this.outside[k] || 0) + dt;
       }
       if (Math.random() < 0.1) this.render();

@@ -132,7 +132,7 @@ const Chat = (() => {
     const tab = App.currentTab();
     const r = tab === 'voice' ? Voice.raga() : tab === 'janya' ? Janya.current() : null;
     const s = {
-      learn: ['How are the 72 melakartas numbered?', 'Why are R2 and G1 the same pitch?', `Explain ${T.MELAS[Learn.current() - 1].name} for a beginner`],
+      learn: ['How are the 72 melakartas numbered?', `Why are ${T.label('R2')} and ${T.label('G1')} the same pitch?`, `Explain ${T.MELAS[Learn.current() - 1].name} for a beginner`],
       ear: ['How can I tell Mohanam from Mohanakalyani by ear?', 'Tips for recognising ragas faster?'],
       janya: [r ? `Why is ${r.name} a janya of ${T.MELAS[r.parent - 1].name}?` : 'What is a janya raga?', 'What is a vakra raga?'],
       voice: [Voice.lastReport() ? 'Explain my last singing report' : 'How do I stay in tune with the shruti?', r ? `How should I practise ${r.name}?` : 'How should I warm up?', 'Why do I go sharp on high notes?'],
