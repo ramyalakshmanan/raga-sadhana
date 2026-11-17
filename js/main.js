@@ -1,6 +1,6 @@
 // App shell: tabs, shruti, tambura, volume, and cross-tab navigation.
 const App = (() => {
-  const TABS = ['learn', 'ear', 'janya', 'quiz', 'voice'];
+  const TABS = ['learn', 'janya', 'ear', 'voice', 'quiz'];
   let currentTab = 'learn';
 
   function go(tab) {

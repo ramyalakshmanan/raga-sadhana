@@ -21,7 +21,18 @@ const Janya = (() => {
         <div class="jgroup-items">${js.map((j) => `<button type="button" data-id="${j.id}" class="${sel === j ? 'current' : ''}">${j.name}</button>`).join('')}</div>
       </div>`;
     }).join('');
-    $('#janyaGroups').innerHTML = html || '<p class="muted small">No raga matches that filter.</p>';
+    // Searching for a bhashanga raga: its parent isn't obvious from the scale,
+    // so show the arohanam, avarohanam, parent and anya swara right away.
+    const hits = f ? T.JANYAS.filter((j) => j.anya && j.anya.length && RagaSearch.score(j, f) >= 60) : [];
+    const hitsHtml = hits.length ? `<div class="janya-hits">${hits.map((j) => {
+      const m = T.MELAS[j.parent - 1];
+      return `<button type="button" class="janya-hit" data-id="${j.id}">
+        <span class="hit-top"><b>${j.name}</b><span class="small muted">Janya of <b>${T.melaLabel(m)}</b></span></span>
+        <span class="hit-seq"><span class="label">Arohanam</span><span>${T.seqHTML(j.aro)}</span><span class="label">Avarohanam</span><span>${T.seqHTML(j.ava)}</span></span>
+        <span class="small"><span class="pill bad">Bhashanga</span> anya swara ${j.anya.map((x) => `${T.swaraHTML(x)} (${T.FULL_NAME[x].toLowerCase()})`).join(', ')}, from outside ${m.name}</span>
+      </button>`;
+    }).join('')}</div>` : '';
+    $('#janyaGroups').innerHTML = hitsHtml + html || '<p class="muted small">No raga matches that filter.</p>';
   }
 
   function whyText(r) {

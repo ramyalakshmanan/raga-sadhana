@@ -66,10 +66,19 @@ const RagaSearch = (() => {
     return esc(name.slice(0, i)) + '<mark>' + esc(name.slice(i, i + raw.length)) + '</mark>' + esc(name.slice(i + raw.length));
   }
 
-  const subline = (r) => {
+  const seqText = (toks) => toks.map((t) => Theory.tokText(t)).join(' ');
+  const where = (r) => (r.kind === 'mela' ? `Melakarta ${r.n}` : `Janya of ${Theory.melaLabel(Theory.MELAS[r.parent - 1])}`);
+  const subline = (r) => (r.anya && r.anya.length ? where(r) : `${where(r)} · ${seqText(r.aro)}`);
+  // Bhashanga ragas borrow a swara from outside the parent, so the parent is
+  // not obvious from the scale: spell out both directions and the anya swara.
+  const anyaDetail = (r) => {
+    if (!r.anya || !r.anya.length) return '';
     const T = Theory;
-    const where = r.kind === 'mela' ? `Melakarta ${r.n}` : `Janya of ${r.parent} ${T.MELAS[r.parent - 1].name}`;
-    return `${where} · ${r.aro.map((t) => T.swaraText(T.parseToken(t).name, T.parseToken(t).oct)).join(' ')}`;
+    const anya = r.anya.map((x) => `${T.swaraText(x)} (${T.FULL_NAME[x].toLowerCase()})`).join(', ');
+    return `<span class="picker-anya">
+      <span><b>Arohanam</b> ${esc(seqText(r.aro))}</span>
+      <span><b>Avarohanam</b> ${esc(seqText(r.ava))}</span>
+      <span>Bhashanga: anya swara ${esc(anya)}, from outside ${esc(T.melaLabel(T.MELAS[r.parent - 1]))}</span></span>`;
   };
 
   // Turn an element into a picker. items: ragas to choose from.
@@ -94,7 +103,7 @@ const RagaSearch = (() => {
       list.innerHTML = results.length
         ? results.map((r, i) => `<li id="${listId}-${i}" role="option" aria-selected="${i === active}" data-i="${i}">
             <span class="picker-name">${highlight(r.name, q)}${r.alias ? ` <span class="muted">(${highlight(r.alias, q)})</span>` : ''}</span>
-            <span class="picker-sub">${esc(subline(r))}</span></li>`).join('')
+            <span class="picker-sub">${esc(subline(r))}</span>${anyaDetail(r)}</li>`).join('')
         : `<li class="picker-empty">No raga matches “${esc(q)}”. Try fewer letters or a melakarta number.</li>`;
       sync();
     }
