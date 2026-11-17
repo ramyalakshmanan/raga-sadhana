@@ -4,24 +4,28 @@ const Learn = (() => {
   let current = 15;
   let melaPicker = null;
 
-  // active: Map of semitone -> the name used (for highlighting), or null.
+  // The name each position goes by in everyday teaching (shown as
+  // S R1 R2 G1 G2 M1 M2 P D1 D2 N1 N2 in two-form numbering).
+  const COMMON = ['S', 'R1', 'R2', 'G2', 'G3', 'M1', 'M2', 'P', 'D1', 'D2', 'N2', 'N3'];
+
+  // active: Map of semitone -> the name a melakarta uses there, or null.
+  // A position shows the raga's own name for it when it has one (e.g. R3 in
+  // a mela that uses shatshruti rishabham), else its everyday name.
   function stripHTML(active) {
-    return T.POSITIONS.map((p) => {
-      const on = active && active.has(p.st);
-      const used = on ? active.get(p.st) : null;
-      const names = p.names
-        .map((n) => `<span class="${used && used !== n ? 'dim' : ''}">${T.swaraHTML(n)}</span>`)
-        .join('<span class="slash">/</span>');
-      return `<button class="pos${on ? ' active' : ''}" data-st="${p.st}" type="button" aria-label="Play ${p.full.join(' or ')}">
-        <span class="pos-names">${names}</span>
-        <span class="pos-full">${p.full.join(' · ')}</span>
-        <span class="pos-c">${Math.round(T.CENTS[p.st])}¢</span></button>`;
-    }).join('');
+    const cell = (st, name, upper) => {
+      const on = active && (upper ? true : active.has(st));
+      const n = active && active.has(st) && !upper ? active.get(st) : name;
+      return `<button class="pos${on ? ' active' : ''}" data-st="${upper ? 12 : st}" type="button" aria-label="Play ${T.FULL_NAME[n] || n}">
+        <span class="pos-names">${upper ? 'Ṡ' : T.swaraHTML(n)}</span>
+        <span class="pos-full">${upper ? 'Upper shadjam' : T.FULL_NAME[n]}</span>
+        <span class="pos-c">${upper ? 1200 : Math.round(T.CENTS[st])}¢</span></button>`;
+    };
+    return COMMON.map((n, st) => cell(st, n)).join('') + cell(0, 'S', true);
   }
   function wireStrip(el) {
     el.addEventListener('click', (e) => {
       const b = e.target.closest('.pos');
-      if (b) Sound.playSeq([{ cents: T.CENTS[+b.dataset.st], dur: 0.9 }]);
+      if (b) Sound.playSeq([{ cents: +b.dataset.st === 12 ? 1200 : T.CENTS[+b.dataset.st], dur: 0.9 }]);
     });
   }
   function ping(el, st) {
@@ -32,7 +36,7 @@ const Learn = (() => {
     const toks = which === 'aro' ? r.aro : which === 'ava' ? r.ava : [...r.aro, ...r.ava.slice(1)];
     Sound.playSeq(toks, {
       dur,
-      onNote: (i) => stripEl && ping(stripEl, i < 0 ? -1 : T.parseToken(toks[i]).st),
+      onNote: (i) => { if (!stripEl) return; const t = i < 0 ? null : T.parseToken(toks[i]); ping(stripEl, !t ? -1 : t.oct > 0 && t.st === 0 ? 12 : t.st); },
     });
   }
 
@@ -205,7 +209,7 @@ const Learn = (() => {
     wireStrip(strip);
     $('#playAll12').addEventListener('click', () => {
       const items = [...T.CENTS, 1200];
-      Sound.playSeq(items, { dur: 0.45, onNote: (i) => ping(strip, i < 0 ? -1 : i % 12) });
+      Sound.playSeq(items, { dur: 0.45, onNote: (i) => ping(strip, i) });
     });
 
     melaPicker = RagaSearch.create($('#melaPicker'), {
