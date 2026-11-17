@@ -79,6 +79,7 @@ const Learn = (() => {
       </div>`;
     wireStrip($('#melaStrip'));
     $$('#melaChart button[data-n]').forEach((b) => b.classList.toggle('current', +b.dataset.n === n));
+    $$('#melaWheel .w-mela').forEach((g) => g.classList.toggle('current', +g.dataset.n === n));
   }
 
   // What each chakra name counts (Indu, the moon, is 1; Netra, the eyes, is 2...).
@@ -133,6 +134,53 @@ const Learn = (() => {
     </div></details>`;
   }
 
+  // The wheel of 72: halves (by Ma), then 12 chakras, then the 72 ragas, clockwise from the top.
+  function renderWheel() {
+    const C = 320, R0 = 52, R1 = 92, R2 = 146, R3 = 314;
+    const pt = (r, a) => [C + r * Math.sin(a), C - r * Math.cos(a)];
+    const arc = (r1, r2, a1, a2) => {
+      const [x1, y1] = pt(r2, a1), [x2, y2] = pt(r2, a2), [x3, y3] = pt(r1, a2), [x4, y4] = pt(r1, a1);
+      const big = a2 - a1 > Math.PI ? 1 : 0;
+      return `M${x1},${y1} A${r2},${r2} 0 ${big} 1 ${x2},${y2} L${x3},${y3} A${r1},${r1} 0 ${big} 0 ${x4},${y4} Z`;
+    };
+    const deg = (a) => (a * 180) / Math.PI;
+    // Radial text, flipped on the left side so it never reads upside down.
+    const radial = (r, a, txt, cls) => {
+      const [x, y] = pt(r, a), left = a > Math.PI;
+      return `<text class="${cls}" x="${x}" y="${y}" transform="rotate(${deg(a) + (left ? 90 : -90)} ${x} ${y})" text-anchor="${left ? 'end' : 'start'}" dominant-baseline="central">${txt}</text>`;
+    };
+    const tangential = (r, a, txt, cls) => {
+      const [x, y] = pt(r, a), flip = a > Math.PI / 2 && a < (3 * Math.PI) / 2;
+      return `<text class="${cls}" x="${x}" y="${y}" transform="rotate(${deg(a) + (flip ? 180 : 0)} ${x} ${y})" text-anchor="middle" dominant-baseline="central">${txt}</text>`;
+    };
+    const TAU = Math.PI * 2;
+    let out = '';
+    for (let h = 0; h < 2; h++) {
+      const a1 = h * Math.PI, a2 = a1 + Math.PI;
+      out += `<path class="w-half h${h}" d="${arc(R0, R1, a1, a2)}"/>` + tangential((R0 + R1) / 2, a1 + Math.PI / 2, h ? 'Prati Ma · M₂' : 'Shuddha Ma · M₁', 'w-half-t');
+    }
+    for (let c = 0; c < 12; c++) {
+      const a1 = (c * TAU) / 12, a2 = a1 + TAU / 12;
+      const [R, G] = T.RG[c % 6];
+      out += `<path class="w-chakra c${c % 2}" d="${arc(R1, R2, a1, a2)}"/>`
+        + tangential((R1 + R2) / 2 + 9, (a1 + a2) / 2, T.CHAKRAS[c], 'w-chakra-t')
+        + tangential((R1 + R2) / 2 - 9, (a1 + a2) / 2, `${T.swaraText(R)} ${T.swaraText(G)}`, 'w-chakra-s');
+    }
+    T.MELAS.forEach((m, i) => {
+      const a1 = (i * TAU) / 72, a2 = a1 + TAU / 72, am = (a1 + a2) / 2;
+      out += `<g class="w-mela" data-n="${m.n}"><title>${m.n} · ${m.name}</title><path class="c${Math.floor(i / 6) % 2}" d="${arc(R2, R3, a1, a2)}"/>`
+        + radial(R2 + 8, am, m.n, 'w-num') + radial(R2 + 30, am, m.name, 'w-name') + '</g>';
+    });
+    out += `<circle class="w-hub" cx="${C}" cy="${C}" r="${R0}"/><text class="w-hub-n" x="${C}" y="${C - 6}" text-anchor="middle">72</text><text class="w-hub-t" x="${C}" y="${C + 14}" text-anchor="middle">melakartas</text>`;
+    $('#melaWheel').innerHTML = `<svg viewBox="0 0 640 640" role="img" aria-label="Wheel of the 72 melakartas">${out}</svg>`;
+    $('#melaWheel').addEventListener('click', (e) => {
+      const g = e.target.closest('[data-n]');
+      if (!g) return;
+      renderMela(+g.dataset.n);
+      $('.build-head').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
   function renderChart() {
     const half = (h) => {
       const cards = [];
@@ -165,6 +213,7 @@ const Learn = (() => {
       items: T.MELAS,
       onPick: (m) => renderMela(m.n),
     });
+    renderWheel();
     renderChart();
     $('#melaChart').addEventListener('click', (e) => {
       const b = e.target.closest('button[data-n]');
