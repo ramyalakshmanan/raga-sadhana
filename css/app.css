@@ -286,6 +286,46 @@ input[type="range"] { accent-color: var(--accent); }
 .steps { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 8px; max-width: 74ch; }
 .steps li { padding-left: 4px; }
 .steps li::marker { color: var(--accent); font-weight: 650; font-family: var(--font-mono); font-size: .85em; }
+.decode { display: flex; flex-direction: column; gap: 10px; }
+.decode .k-m { --k: var(--zari); --k-soft: var(--zari-soft); }
+.decode .k-c { --k: var(--accent); --k-soft: var(--accent-soft); }
+.decode .k-p { --k: var(--good); --k-soft: var(--good-soft); }
+.decode .k-f { --k: var(--ink); --k-soft: var(--surface-2); }
+.dz-row { display: grid; grid-template-columns: 128px 1fr; gap: 12px; align-items: stretch; }
+.dz-key { display: flex; flex-direction: column; justify-content: center; gap: 1px; padding-left: 12px; border-left: 3px solid var(--k); }
+.dz-key b { font-size: .95rem; }
+.dz-key span:last-child { font-size: .76rem; color: var(--muted); }
+.dz-step { font-family: var(--font-mono); font-size: .7rem; color: var(--k); font-weight: 650; }
+.dz-tiles { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.dz-tiles.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.dz-tile {
+  border: 1px solid var(--line); background: var(--surface-2); border-radius: 12px; padding: 8px 6px;
+  display: flex; flex-direction: column; align-items: center; gap: 1px; cursor: pointer; color: var(--muted);
+  font: inherit; transition: border-color .15s, background .15s, color .15s, transform .15s; min-width: 0;
+}
+.dz-tile:hover { border-color: var(--k); color: var(--ink-2); }
+.dz-tile.on { background: var(--k-soft); border-color: var(--k); color: var(--ink); box-shadow: 0 0 0 1px var(--k) inset; }
+.dz-n { font-family: var(--font-mono); font-size: .66rem; opacity: .8; }
+.dz-name { font-weight: 650; font-size: .86rem; }
+.dz-tile.on .dz-name, .dz-tile.on .dz-n { color: var(--k); }
+.dz-big { font-size: 1.05rem; font-weight: 600; white-space: nowrap; }
+.dz-sub { font-size: .68rem; text-align: center; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.dz-out { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 22px; margin-top: 6px; padding: 12px 14px; border-radius: 14px; background: var(--surface-2); }
+.dz-sum { font-size: 1rem; color: var(--ink-2); }
+.dz-sum span { color: var(--k); font-weight: 600; }
+.dz-cap { font-size: .7rem; color: var(--muted); margin-top: 2px; }
+.dz-sum b { color: var(--ink); font-size: 1.2rem; }
+.dz-result { display: flex; gap: 6px; flex-wrap: wrap; }
+.dz-sw { min-width: 2.4em; text-align: center; padding: 6px 8px; border-radius: 10px; background: var(--k-soft); color: var(--k); font-weight: 650; font-size: 1.05rem; border: 1px solid color-mix(in srgb, var(--k) 35%, transparent); position: relative; }
+.dz-sw.k-f { color: var(--ink-2); background: var(--surface); border-color: var(--line-strong); }
+.dz-dot { position: absolute; top: -2px; left: 50%; transform: translateX(-50%); font-size: .9rem; }
+@media (max-width: 700px) {
+  .dz-row { grid-template-columns: 1fr; gap: 6px; }
+  .dz-key { flex-direction: row; align-items: baseline; gap: 8px; }
+  .dz-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .dz-sub { display: none; }
+  .dz-tiles.two .dz-sub { display: block; }
+}
 .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .chip-btn {
   border: 1px solid var(--line-strong); background: var(--surface); border-radius: 999px;

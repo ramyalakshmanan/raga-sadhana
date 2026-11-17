@@ -63,14 +63,7 @@ const Learn = (() => {
           </div>
         </div>
       </div>
-      <ol class="steps">
-        <li><b>Madhyamam.</b> ${n <= 36
-          ? `${n} is 36 or less, so it takes ${T.swaraHTML('M1')}.`
-          : `${n} is above 36, so it takes ${T.swaraHTML('M2')}. Subtract 36: ${n} − 36 = ${k}.`}</li>
-        <li><b>Rishabham and gandharam.</b> ${k} sits in chakra ${m.chakraInHalf + 1} of this half (melas ${lo}–${lo + 5}), which uses ${T.swaraHTML(R)} and ${T.swaraHTML(G)}.</li>
-        <li><b>Dhaivatam and nishadam.</b> It is position ${m.pos + 1} (${T.PA[m.pos]}) inside the chakra, which uses ${T.swaraHTML(D)} and ${T.swaraHTML(N)}.</li>
-        <li><b>Result.</b> ${T.seqHTML(m.aro)}</li>
-      </ol>
+      ${decodeHTML(m)}
       <div id="melaStrip" class="strip compact">${stripHTML(active)}</div>
       <div class="row">
         <button class="btn primary" type="button" data-play="both">Play arohanam and avarohanam</button>
@@ -86,6 +79,36 @@ const Learn = (() => {
       </div>`;
     wireStrip($('#melaStrip'));
     $$('#melaChart button[data-n]').forEach((b) => b.classList.toggle('current', +b.dataset.n === n));
+  }
+
+  // What each chakra name counts (Indu, the moon, is 1; Netra, the eyes, is 2...).
+  const CHAKRA_MEANS = ['the moon', 'the eyes', 'the fires', 'the Vedas', 'the arrows', 'the seasons',
+    'the sages', 'the Vasus', 'Brahma', 'the directions', 'the Rudras', 'the Adityas'];
+
+  // The decoder as a picture: three rows of choices, the current one lit, and the sum.
+  function decodeHTML(m) {
+    const h = m.madhyama === 'M1' ? 0 : 1, c = m.chakraInHalf, p = m.pos, base = h * 36;
+    const sw = (...xs) => xs.map((x) => T.swaraHTML(x)).join(' ');
+    const half = [0, 1].map((i) => `<button type="button" class="dz-tile${i === h ? ' on' : ''}" data-go="${i * 36 + c * 6 + p + 1}">
+        <span class="dz-big">${sw(i ? 'M2' : 'M1')}</span><span class="dz-sub">${i ? 'Prati' : 'Shuddha'} · melas ${i * 36 + 1}–${i * 36 + 36}</span></button>`).join('');
+    const chakras = T.RG.map(([R, G], i) => `<button type="button" class="dz-tile${i === c ? ' on' : ''}" data-go="${base + i * 6 + p + 1}">
+        <span class="dz-n">${i + 1}</span><span class="dz-name">${T.CHAKRAS[h * 6 + i]}</span>
+        <span class="dz-big">${sw(R, G)}</span><span class="dz-sub">${CHAKRA_MEANS[h * 6 + i]}</span></button>`).join('');
+    const poss = T.DN.map(([D, N], i) => `<button type="button" class="dz-tile${i === p ? ' on' : ''}" data-go="${base + c * 6 + i + 1}">
+        <span class="dz-n">${i + 1}</span><span class="dz-name">${T.PA[i]}</span>
+        <span class="dz-big">${sw(D, N)}</span></button>`).join('');
+    const kind = (name) => (name[0] === 'M' ? 'm' : 'RG'.includes(name[0]) ? 'c' : 'DN'.includes(name[0]) ? 'p' : 'f');
+    const result = m.aro.map((t) => { const x = T.parseToken(t); return `<span class="dz-sw k-${kind(x.name)}">${T.swaraHTML(x.name)}${x.oct ? '<span class="dz-dot">·</span>' : ''}</span>`; }).join('');
+    return `<div class="decode">
+      <div class="dz-row k-m"><div class="dz-key"><span class="dz-step">1</span><b>Madhyamam</b><span>which half</span></div><div class="dz-tiles two">${half}</div></div>
+      <div class="dz-row k-c"><div class="dz-key"><span class="dz-step">2</span><b>Chakra</b><span>fixes R and G</span></div><div class="dz-tiles">${chakras}</div></div>
+      <div class="dz-row k-p"><div class="dz-key"><span class="dz-step">3</span><b>Position</b><span>fixes D and N</span></div><div class="dz-tiles">${poss}</div></div>
+      <div class="dz-out">
+        <div class="dz-sum"><div class="mono"><span class="k-m">${base}</span> + <span class="k-c">6 × ${c}</span> + <span class="k-p">${p + 1}</span> = <b>${m.n}</b></div>
+          <div class="dz-cap">half start + six per earlier chakra + position</div></div>
+        <div class="dz-result">${result}</div>
+      </div>
+    </div>`;
   }
 
   function renderChart() {
@@ -107,10 +130,6 @@ const Learn = (() => {
   }
 
   function init() {
-    // The pairs of names that share a pitch, written in the current numbering.
-    const pair = (a, b) => `${T.swaraHTML(a)} is the same pitch as ${T.swaraHTML(b)}`;
-    $('#sharedNames').innerHTML = [pair('R2', 'G1'), pair('R3', 'G2'), pair('D2', 'N1'), pair('D3', 'N2')].join(', ')
-      + (T.getNumbering() === 'practical' ? ' (G<sub>s</sub> and N<sub>s</sub> are the rare shuddha gandharam and shuddha nishadam)' : '');
     const strip = $('#strip');
     strip.innerHTML = stripHTML(null);
     wireStrip(strip);
@@ -136,6 +155,8 @@ const Learn = (() => {
     $('#melaPrev').addEventListener('click', () => renderMela(current === 1 ? 72 : current - 1));
     $('#melaNext').addEventListener('click', () => renderMela(current === 72 ? 1 : current + 1));
     $('#melaCard').addEventListener('click', (e) => {
+      const go = e.target.closest('[data-go]');
+      if (go) { renderMela(+go.dataset.go); return; }
       const m = T.MELAS[current - 1];
       const pb = e.target.closest('[data-play]');
       if (pb) playRaga(m, pb.dataset.play, 0.5, $('#melaStrip'));
